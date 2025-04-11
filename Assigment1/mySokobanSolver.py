@@ -30,7 +30,7 @@ Last modified by 2021-08-17  by f.maire@qut.edu.au
 # with these files
 import search 
 import sokoban
-
+import re
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -44,6 +44,143 @@ def my_team():
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+def read_and_clean_warehouse(file_path: str) -> list[list[str]]:
+    """
+    Reads a warehouse text file and converts it into a cleaned 2D list.
+    - Removes player ('@') and boxes ('$'), replacing them with spaces (' ').
+    - Replaces boxes on goal cells ('*') and players on goal cells ('!') with '.'.
+    @param file_path (str):
+        The relative file path of the warehouse file.
+    @return:
+        list[list[str]]: A cleaned 2D warehouse grid.
+    """
+    with open(file_path, "r", encoding="utf-8") as file:
+        # Read lines, clean thsem, and filter out empty lines
+        return [
+            [re.sub(r'[@$]', ' ', re.sub(r'[!*]', '.', char)) for char in line.rstrip()]
+            for line in file.readlines()[1:] if line.strip()  # Skip empty lines
+        ]
+
+def find_corners(warehouse2D: list[list[str]]) -> (list[list[str]], tuple):
+    """
+    Finds corners and replaces them with 'X' if not a target square or '.' if a target square.
+    @param warehouse2D (list[list[str]]):
+        A 2D array representing the warehouse.
+    @return:
+       warehouse_corners_marked (list[list[str]]): A 2D array representing the warehouse with corners marked by an 'X' (if not target square) or '.' if target square.
+    """
+    corner_positions = []
+
+    for row_index, row in enumerate(warehouse2D[1:len(warehouse2D) - 1], start=1):
+        first_hash = row.index('#')
+        last_hash = len(row) - 1 - row[::-1].index('#')
+
+        for index in range(first_hash + 1, last_hash):
+            char = row[index]
+            if char == '#' or char == '.': continue
+            up_hash = 1 if warehouse2D[row_index + 1][index] == '#' else 0
+            down_hash = 1 if warehouse2D[row_index - 1][index] == '#' else 0
+            left_hash = 1 if row[index - 1] == '#' else 0
+            right_hash = 1 if row[index + 1] == '#' else 0
+            if (up_hash + down_hash + left_hash + right_hash) >= 2:
+                warehouse2D[row_index][index] = 'X'
+                corner_positions.append((row_index, index))
+
+    return warehouse2D, corner_positions
+
+def find_walls(warehouse_details: tuple[list[list[str]], list[tuple]]) -> list[list[str]]:
+    """
+    Finds taboo cells along walls & between corners, and then marks them with 'X'.
+    @param warehouse_details:
+        A tuple containing a 2D array and a tuple of x and y coords for corner positions.
+    @return:
+       warehouse2D (list[list[str]]): A 2D array representing the warehouse with taboo cells marked by an 'X'.
+    """
+    warehouse2D, corner_positions = warehouse_details
+
+    for corner in corner_positions:
+        row_idx, col_idx = corner  # Assuming corner is (row, col)
+
+        # Process horizontally (to the right)
+        for i in range(col_idx + 1, len(warehouse2D[row_idx])):
+            cell = warehouse2D[row_idx][i]
+            if cell == ' ':
+                continue
+            if cell == '#':
+                break
+            if cell == 'X':
+                # Found another corner in the same row
+                next_corner_col = i
+
+                # Check for walls above
+                above_wall = True
+                for j in range(col_idx + 1, next_corner_col):
+                    if row_idx > 0:
+                        above_cell = warehouse2D[row_idx - 1][j]
+                        if above_cell != '#':
+                            above_wall = False
+                            break
+
+                # Check for walls below
+                below_wall = True
+                for j in range(col_idx + 1, next_corner_col):
+                    if row_idx < len(warehouse2D) - 1:
+                        below_cell = warehouse2D[row_idx + 1][j]
+                        if below_cell != '#':
+                            below_wall = False
+                            break
+
+                # Mark taboo cells if along a wall
+                if above_wall or below_wall:
+                    for j in range(col_idx + 1, next_corner_col):
+                        if warehouse2D[row_idx][j] == ' ':
+                            warehouse2D[row_idx][j] = 'X'
+                break
+
+        # Process vertically (downward) - existing code
+        for n in range(row_idx + 1, len(warehouse2D)):
+            if n >= len(warehouse2D) or col_idx >= len(warehouse2D[n]):
+                break
+
+            cell = warehouse2D[n][col_idx]
+            if cell == ' ':
+                continue
+            if cell == '#' or cell == '.':
+                break
+            if cell == 'X':
+                # Found next corner in same column
+                next_corner_row = n
+
+                # Check for walls to the left
+                left_wall = True
+                for m in range(row_idx + 1, next_corner_row):
+                    if col_idx > 0:
+                        left_cell = warehouse2D[m][col_idx - 1]
+                        if left_cell != '#':
+                            left_wall = False
+                            break
+
+                # Check for walls to the right
+                right_wall = True
+                for m in range(row_idx + 1, next_corner_row):
+                    if col_idx < len(warehouse2D[m]) - 1:
+                        right_cell = warehouse2D[m][col_idx + 1]
+                        if right_cell != '#':
+                            right_wall = False
+                            break
+
+                # Mark taboo cells if along a wall
+                if left_wall or right_wall:
+                    for m in range(row_idx + 1, next_corner_row):
+                        if warehouse2D[m][col_idx] == ' ':
+                            warehouse2D[m][col_idx] = 'X'
+                break
+
+    return warehouse2D
+
+def Array2String(warehouse2D):
+    result = "\n".join(" ".join(map(str, row)) for row in warehouse2D)
+    return result
 
 def taboo_cells(warehouse):
     """
@@ -69,8 +206,10 @@ def taboo_cells(warehouse):
        The returned string should NOT have marks for the worker, the targets,
        and the boxes.
     """
-    ##         "INSERT YOUR CODE HERE"
-    raise NotImplementedError()
+    clean_warehouse = read_and_clean_warehouse(warehouse)
+    marked_corners = find_corners(clean_warehouse)
+    marked_walls = find_walls(marked_corners)
+    return Array2String(marked_walls)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
