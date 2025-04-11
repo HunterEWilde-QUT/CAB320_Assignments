@@ -229,9 +229,9 @@ class SokobanPuzzle(search.Problem):
         rows = file.readlines()
         for row in rows:
             if '@' in row:
-                self.initial = (rows.index(row), row.index('@')) # tuple[int,int]
+                self.initial = (row.index('@'), rows.index(row)) # tuple[int x,int y]
             if '.' in row:
-                self.goal = (rows.index(row), row.index('.')) # tuple[int,int]
+                self.goal = (row.index('.'), rows.index(row)) # tuple[int x,int y]
 
     def actions(self, state):
         """
