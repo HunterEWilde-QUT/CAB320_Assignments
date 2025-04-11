@@ -91,10 +91,8 @@ def find_corners(warehouse2D: list[list[str]]) -> (list[list[str]], tuple):
 def find_walls(warehouse_details: tuple[list[list[str]], list[tuple]]) -> list[list[str]]:
     """
     Finds taboo cells along walls & between corners, and then marks them with 'X'.
-    @param warehouse_details:
-        A tuple containing a 2D array and a tuple of x and y coords for corner positions.
-    @return:
-       warehouse2D (list[list[str]]): A 2D array representing the warehouse with taboo cells marked by an 'X'.
+    :param warehouse_details: A tuple containing a 2D array and a tuple of x and y coords for corner positions.
+    :return: warehouse2D (list[list[str]]): A 2D array representing the warehouse with taboo cells marked by an 'X'.
     """
     warehouse2D, corner_positions = warehouse_details
 
@@ -196,15 +194,11 @@ def taboo_cells(warehouse):
      Rule 1: if a cell is a corner and not a target, then it is a taboo cell.
      Rule 2: all the cells between two corners along a wall are taboo if none of
              these cells is a target.
-
-    @param warehouse:
-        a Warehouse object with a worker inside the warehouse
-
-    @return
-       A string representing the warehouse with only the wall cells marked with
-       a '#' and the taboo cells marked with a 'X'.
-       The returned string should NOT have marks for the worker, the targets,
-       and the boxes.
+    :param warehouse: a Warehouse object with a worker inside the warehouse
+    :return: A string representing the warehouse with only
+        wall cells marked with '#' & taboo cells marked with a 'X'.
+        The returned string should NOT have marks for the worker,
+        the targets, and the boxes.
     """
     clean_warehouse = read_and_clean_warehouse(warehouse)
     marked_corners = find_corners(clean_warehouse)
@@ -235,9 +229,9 @@ class SokobanPuzzle(search.Problem):
         rows = file.readlines()
         for row in rows:
             if '@' in row:
-                self.initial = (rows.index(row), row.index('@'))
+                self.initial = (rows.index(row), row.index('@')) # tuple[int,int]
             if '.' in row:
-                self.goal = (rows.index(row), row.index('.'))
+                self.goal = (rows.index(row), row.index('.')) # tuple[int,int]
 
     def actions(self, state):
         """
@@ -258,28 +252,27 @@ class SokobanPuzzle(search.Problem):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 def check_elem_action_seq(warehouse, action_seq):
-    '''
-    
+    """
     Determine if the sequence of actions listed in 'action_seq' is legal or not.
-    
+
     Important notes:
       - a legal sequence of actions does not necessarily solve the puzzle.
       - an action is legal even if it pushes a box onto a taboo cell.
-        
-    @param warehouse: a valid Warehouse object
 
-    @param action_seq: a sequence of legal actions.
+    :param warehouse: a valid Warehouse object
+
+    :param action_seq: a sequence of legal actions.
            For example, ['Left', 'Down', Down','Right', 'Up', 'Down']
-           
-    @return
+
+    :return:
         The string 'Impossible', if one of the action was not valid.
            For example, if the agent tries to push two boxes at the same time,
                         or push a box into a wall.
-        Otherwise, if all actions were successful, return                 
+        Otherwise, if all actions were successful, return
                A string representing the state of the puzzle after applying
                the sequence of actions.  This must be the same string as the
                string returned by the method  Warehouse.__str__()
-    '''
+    """
     
     ##         "INSERT YOUR CODE HERE"
     
@@ -289,31 +282,25 @@ def check_elem_action_seq(warehouse, action_seq):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 def solve_weighted_sokoban(warehouse):
-    '''
+    """
     This function analyses the given warehouse.
-    It returns the two items. The first item is an action sequence solution. 
+    It returns the two items. The first item is an action sequence solution.
     The second item is the total cost of this action sequence.
-    
-    @param 
-     warehouse: a valid Warehouse object
 
-    @return
-    
-        If puzzle cannot be solved 
+    :param warehouse: a valid Warehouse object
+
+    :return:
+        If puzzle cannot be solved
             return 'Impossible', None
-        
-        If a solution was found, 
-            return S, C 
+        If a solution was found,
+            return S, C
             where S is a list of actions that solves
             the given puzzle coded with 'Left', 'Right', 'Up', 'Down'
             For example, ['Left', 'Down', Down','Right', 'Up', 'Down']
             If the puzzle is already in a goal state, simply return []
             C is the total cost of the action sequence C
-
-    '''
+    """
     
     raise NotImplementedError()
 
-
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
