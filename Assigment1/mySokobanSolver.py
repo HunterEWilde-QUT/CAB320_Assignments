@@ -224,7 +224,6 @@ class SokobanPuzzle(search.Problem):
         searches each row for the initial state (i.e. the player's position '@')
         & the goal state (i.e. the target square's position '.'),
         the indices of which are then stored in the `initial` and `goal` variables.
-
         :param warehouse: text file mapping the warehouse layout.
         """
         file = open(warehouse, 'r')
@@ -240,27 +239,54 @@ class SokobanPuzzle(search.Problem):
         """
         :param state: a given state in the form tuple[int, int].
         :return: a list of actions which can be performed in the given state.
+            :type: string[]
         """
-        up, down, left, right = (state[0], state[1] + 1), (state[0], state[1] - 1), (state[0] - 1, state[1]), (state[0] + 1, state[1])
+        up, down, left, right = ((state[0], state[1] + 1), (state[0], state[1] - 1),
+                                 (state[0] - 1, state[1]), (state[0] + 1, state[1]))
         actions = []
+
         if self.tabooCells[up] == " ":
-            actions.append(up)
+            actions.append('Up')
         if self.tabooCells[down] == " ":
-            actions.append(down)
+            actions.append('Down')
         if self.tabooCells[left] == " ":
-            actions.append(left)
+            actions.append('Left')
         if self.tabooCells[right] == " ":
-            actions.append(right)
+            actions.append('Right')
+
         return actions
 
     def result(self, state, action):
         """
         Applies the given action to the given state and returns the resulting state.
         :param state: a given state.
+            :type: tuple[int, int]
         :param action: action to be applied.
+            E.g. 'Left', 'Down', 'Right', 'Up'.
         :return: state resulting from applying the action to the given state.
         """
-        raise NotImplementedError
+        if action in self.actions(state):
+            if action == 'Up':
+                return (state[0], state[1] + 1)
+            elif action == 'Down':
+                return (state[0], state[1] - 1)
+            elif action == 'Left':
+                return (state[0] - 1, state[1])
+            elif action == 'Right':
+                return (state[0] + 1, state[1])
+        else:
+            return state
+
+    def path_cost(self, c, state1, action, state2):
+        """
+        Calculate the cost of a path from state 1 to state 2 via the given action,
+        assuming cost c.
+        :param c:
+        :param state1:
+        :param action:
+        :param state2:
+        :return:
+        """
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
