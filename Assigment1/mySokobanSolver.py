@@ -194,7 +194,8 @@ def taboo_cells(warehouse):
      Rule 1: if a cell is a corner and not a target, then it is a taboo cell.
      Rule 2: all the cells between two corners along a wall are taboo if none of
              these cells is a target.
-    :param warehouse: a Warehouse object with a worker inside the warehouse
+
+    :param warehouse: a Warehouse object with a worker inside the warehouse.
     :return: A string representing the warehouse with only
         wall cells marked with '#' & taboo cells marked with a 'X'.
         The returned string should NOT have marks for the worker,
@@ -223,6 +224,7 @@ class SokobanPuzzle(search.Problem):
         searches each row for the initial state (i.e. the player's position '@')
         & the goal state (i.e. the target square's position '.'),
         the indices of which are then stored in the `initial` and `goal` variables.
+
         :param warehouse: text file mapping the warehouse layout.
         """
         file = open(warehouse, 'r')
@@ -232,13 +234,24 @@ class SokobanPuzzle(search.Problem):
                 self.initial = (row.index('@'), rows.index(row)) # tuple[int x,int y]
             if '.' in row:
                 self.goal = (row.index('.'), rows.index(row)) # tuple[int x,int y]
+        self.tabooCells = taboo_cells(warehouse)
 
     def actions(self, state):
         """
-        Return the list of actions that can be executed in the given state.
-        :param state: a given state.
+        :param state: a given state in the form tuple[int, int].
+        :return: a list of actions which can be performed in the given state.
         """
-        raise NotImplementedError
+        up, down, left, right = (state[0], state[1] + 1), (state[0], state[1] - 1), (state[0] - 1, state[1]), (state[0] + 1, state[1])
+        actions = []
+        if self.tabooCells[up] == " ":
+            actions.append(up)
+        if self.tabooCells[down] == " ":
+            actions.append(down)
+        if self.tabooCells[left] == " ":
+            actions.append(left)
+        if self.tabooCells[right] == " ":
+            actions.append(right)
+        return actions
 
     def result(self, state, action):
         """
