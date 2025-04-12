@@ -289,7 +289,16 @@ class SokobanPuzzle(search.Problem):
         :param state2: state resulting from applying the action.
         :return: total cost of path to state 2.
         """
+        raise NotImplementedError
 
+    def value(self, state: tuple[int,int]):
+        """
+        Compute the value of the given state.
+        Used for optimization problems.
+        :param state: current state.
+        :return: value of the given state.
+        """
+        raise NotImplementedError
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
