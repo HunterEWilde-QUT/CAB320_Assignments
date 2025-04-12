@@ -176,7 +176,7 @@ def find_walls(warehouse_details: tuple[list[list[str]], list[tuple]]) -> list[l
 
     return warehouse2D
 
-def Array2String(warehouse2D):
+def array2str(warehouse2D):
     result = "\n".join(" ".join(map(str, row)) for row in warehouse2D)
     return result
 
@@ -204,7 +204,7 @@ def taboo_cells(warehouse):
     clean_warehouse = read_and_clean_warehouse(warehouse)
     marked_corners = find_corners(clean_warehouse)
     marked_walls = find_walls(marked_corners)
-    return Array2String(marked_walls)
+    return array2str(marked_walls)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -233,13 +233,16 @@ class SokobanPuzzle(search.Problem):
                 self.initial = (row.index('@'), rows.index(row)) # tuple[int x,int y]
             if '.' in row:
                 self.goal = (row.index('.'), rows.index(row)) # tuple[int x,int y]
-        self.tabooCells = taboo_cells(warehouse)
 
-    def actions(self, state):
+        # Parse taboo_cells return string to list[tuple[int, int]]
+        #for i in len(taboo_cells(warehouse)):
+
+        self.tabooCells = ((0, 0), (0, 0))
+
+    def actions(self, state: tuple[int,int]) -> list[str]:
         """
-        :param state: a given state in the form tuple[int, int].
+        :param state: a given state.
         :return: a list of actions which can be performed in the given state.
-            :type: string[]
         """
         up, down, left, right = ((state[0], state[1] + 1), (state[0], state[1] - 1),
                                  (state[0] - 1, state[1]), (state[0] + 1, state[1]))
@@ -256,37 +259,37 @@ class SokobanPuzzle(search.Problem):
 
         return actions
 
-    def result(self, state, action):
+    def result(self, state: tuple[int,int], action: str) -> tuple[int,int]:
         """
         Applies the given action to the given state and returns the resulting state.
         :param state: a given state.
-            :type: tuple[int, int]
         :param action: action to be applied.
             E.g. 'Left', 'Down', 'Right', 'Up'.
         :return: state resulting from applying the action to the given state.
         """
         if action in self.actions(state):
             if action == 'Up':
-                return (state[0], state[1] + 1)
+                return state[0], state[1] + 1
             elif action == 'Down':
-                return (state[0], state[1] - 1)
+                return state[0], state[1] - 1
             elif action == 'Left':
-                return (state[0] - 1, state[1])
+                return state[0] - 1, state[1]
             elif action == 'Right':
-                return (state[0] + 1, state[1])
+                return state[0] + 1, state[1]
         else:
             return state
 
-    def path_cost(self, c, state1, action, state2):
+    def path_cost(self, c, state1: tuple[int,int], action: str, state2: tuple[int,int]):
         """
         Calculate the cost of a path from state 1 to state 2 via the given action,
         assuming cost c.
-        :param c:
-        :param state1:
-        :param action:
-        :param state2:
-        :return:
+        :param c: cost to move to state 1.
+        :param state1: current state.
+        :param action: action of moving from state 1 to state 2.
+        :param state2: state resulting from applying the action.
+        :return: total cost of path to state 2.
         """
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
