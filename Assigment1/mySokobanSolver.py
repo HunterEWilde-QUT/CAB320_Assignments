@@ -24,7 +24,6 @@ Last modified by 2021-08-17  by f.maire@qut.edu.au
   (and hopefully didn't introduce any bug!)
 
 """
-
 # You have to make sure that your code works with 
 # the files provided (search.py and sokoban.py) as your code will be tested 
 # with these files
@@ -235,9 +234,15 @@ class SokobanPuzzle(search.Problem):
                 self.goal = (row.index('.'), rows.index(row)) # tuple[int x,int y]
 
         # Parse taboo_cells return string to list[tuple[int, int]]
-        #for i in len(taboo_cells(warehouse)):
+        self.tabooCells = []
+        tabooRows = taboo_cells(warehouse).split('\n')
 
-        self.tabooCells = ((0, 0), (0, 0))
+        for y in range(len(tabooRows)):
+            tabooColumns = tabooRows[y].split(' ')
+
+            for x in range(len(tabooColumns)):
+                if '#' or 'X' in tabooColumns[x]:
+                    self.tabooCells.append((x, y)) # List of taboo cell coords
 
     def actions(self, state: tuple[int,int]) -> list[str]:
         """
@@ -248,13 +253,13 @@ class SokobanPuzzle(search.Problem):
                                  (state[0] - 1, state[1]), (state[0] + 1, state[1]))
         actions = []
 
-        if self.tabooCells[up] == " ":
+        if up not in self.tabooCells:
             actions.append('Up')
-        if self.tabooCells[down] == " ":
+        if down not in self.tabooCells:
             actions.append('Down')
-        if self.tabooCells[left] == " ":
+        if left not in self.tabooCells:
             actions.append('Left')
-        if self.tabooCells[right] == " ":
+        if right not in self.tabooCells:
             actions.append('Right')
 
         return actions
