@@ -225,6 +225,10 @@ class SokobanPuzzle(search.Problem):
         the indices of which are then stored in the `initial` and `goal` variables.
         :param warehouse: text file mapping the warehouse layout.
         """
+        self.initial = (int, int)
+        self.goal = (int, int)
+        self.tabooCells = []
+
         file = open(warehouse, 'r')
         rows = file.readlines()
         for row in rows:
@@ -234,7 +238,6 @@ class SokobanPuzzle(search.Problem):
                 self.goal = (row.index('.'), rows.index(row)) # tuple[int x,int y]
 
         # Parse taboo_cells return string to list[tuple[int, int]]
-        self.tabooCells = []
         tabooRows = taboo_cells(warehouse).split('\n')
 
         for y in range(len(tabooRows)):
