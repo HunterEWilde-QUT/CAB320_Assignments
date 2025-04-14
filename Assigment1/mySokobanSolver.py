@@ -63,10 +63,8 @@ def read_and_clean_warehouse(file_path: str) -> list[list[str]]:
 def find_corners(warehouse2D: list[list[str]]) -> (list[list[str]], tuple):
     """
     Finds corners and replaces them with 'X' if not a target square or '.' if a target square.
-    @param warehouse2D (list[list[str]]):
-        A 2D array representing the warehouse.
-    @return:
-       warehouse_corners_marked (list[list[str]]): A 2D array representing the warehouse with corners marked by an 'X' (if not target square) or '.' if target square.
+    :param warehouse2D: A 2D array representing the warehouse.
+    :return: warehouse_corners_marked: A 2D array representing the warehouse with corners marked by an 'X' (if not target square) or '.' if target square.
     """
     corner_positions = []
 
@@ -91,7 +89,7 @@ def find_walls(warehouse_details: tuple[list[list[str]], list[tuple]]) -> list[l
     """
     Finds taboo cells along walls & between corners, and then marks them with 'X'.
     :param warehouse_details: A tuple containing a 2D array and a tuple of x and y coords for corner positions.
-    :return: warehouse2D (list[list[str]]): A 2D array representing the warehouse with taboo cells marked by an 'X'.
+    :return: warehouse2D: A 2D array representing the warehouse with taboo cells marked by an 'X'.
     """
     warehouse2D, corner_positions = warehouse_details
 
@@ -289,8 +287,7 @@ class SokobanPuzzle(search.Problem):
 
     def path_cost(self, c, state1: tuple[int,int], action: str, state2: tuple[int,int]):
         """
-        Calculate the cost of a path from state 1 to state 2 via the given action,
-        assuming cost c.
+        Calculate the cost of a path from state 1 to state 2 via the given action, assuming cost c.
         :param c: cost to move to state 1.
         :param state1: current state.
         :param action: action of moving from state 1 to state 2.
@@ -319,18 +316,13 @@ def check_elem_action_seq(warehouse, action_seq):
       - an action is legal even if it pushes a box onto a taboo cell.
 
     :param warehouse: a valid Warehouse object
-
     :param action_seq: a sequence of legal actions.
-           For example, ['Left', 'Down', Down','Right', 'Up', 'Down']
-
-    :return:
-        The string 'Impossible', if one of the action was not valid.
-           For example, if the agent tries to push two boxes at the same time,
-                        or push a box into a wall.
-        Otherwise, if all actions were successful, return
-               A string representing the state of the puzzle after applying
-               the sequence of actions.  This must be the same string as the
-               string returned by the method  Warehouse.__str__()
+        E.g. ['Left', 'Down', Down','Right', 'Up', 'Down']
+    :return: The string 'Impossible', if one of the action was not valid.
+        E.g. if the agent tries to push two boxes at the same time, or push a box into a wall.
+        Otherwise, if all actions were successful,
+        return a string representing the state of the puzzle after applying the sequence of actions.
+        This must be the same string as the string returned by the method `Warehouse.__str__()`.
     """
     
     ##         "INSERT YOUR CODE HERE"
@@ -347,7 +339,6 @@ def solve_weighted_sokoban(warehouse):
     The second item is the total cost of this action sequence.
 
     :param warehouse: a valid Warehouse object
-
     :return:
         If puzzle cannot be solved
             return 'Impossible', None
