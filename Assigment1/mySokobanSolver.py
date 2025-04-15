@@ -195,9 +195,9 @@ def check_walls(warehouse, corners: list[tuple[int,int]]) -> list[tuple[int,int]
 
 def find_taboo_cells(warehouse) -> list[tuple[int,int]]:
     """
-
+    Find the (x,y) coordinates of every taboo cell in the warehouse.
     :param warehouse: warehouse text file.
-    :return: a list of tuples (x,y) with the coordinates of all taboo cells.
+    :return: a list of tuples (x,y) containing the coordinates of all taboo cells.
     """
     taboo_cells = []
 
@@ -274,7 +274,7 @@ class SokobanPuzzle(search.Problem):
         """
         self.initial = (int, int)
         self.goal = (int, int)
-        self.tabooCells = []
+        self.tabooCells = find_taboo_cells(warehouse)
 
         file = open(warehouse, 'r')
         rows = file.readlines()
@@ -283,16 +283,6 @@ class SokobanPuzzle(search.Problem):
                 self.initial = (row.index('@'), rows.index(row)) # tuple[int x,int y]
             if '.' in row:
                 self.goal = (row.index('.'), rows.index(row)) # tuple[int x,int y]
-
-        # Parse taboo_cells return string to list[tuple[int, int]]
-        tabooRows = taboo_cells(warehouse).split('\n')
-
-        for y in range(len(tabooRows)):
-            tabooColumns = tabooRows[y].split(' ')
-
-            for x in range(len(tabooColumns)):
-                if '#' or 'X' in tabooColumns[x]:
-                    self.tabooCells.append((x, y)) # List of taboo cell coords
 
     def actions(self, state: tuple[int,int]) -> list[str]:
         """
