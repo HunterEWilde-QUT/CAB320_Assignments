@@ -199,15 +199,15 @@ def find_taboo_cells(warehouse) -> list[tuple[int,int]]:
     :param warehouse: warehouse text file.
     :return: a list of tuples (x,y) containing the coordinates of all taboo cells.
     """
-    taboo_cells = []
+    taboo_cells_coords = []
 
     corners = find_corners(warehouse)
-    taboo_cells.extend(corners)
+    taboo_cells_coords.extend(corners)
 
     between_corners = check_walls(warehouse, corners)
-    taboo_cells.extend(between_corners)
+    taboo_cells_coords.extend(between_corners)
 
-    return taboo_cells
+    return taboo_cells_coords
 
 def taboo_cells(warehouse) -> str:
     """
@@ -230,7 +230,7 @@ def taboo_cells(warehouse) -> str:
         The returned string should NOT have marks for the worker,
         the targets, and the boxes.
     """
-    taboo_cells = find_taboo_cells(warehouse)
+    taboo_cells_coords = find_taboo_cells(warehouse)
 
     warehouse_string = warehouse.__str__()
 
@@ -243,7 +243,7 @@ def taboo_cells(warehouse) -> str:
     for y, line in enumerate(warehouse_lines):
         new_line = ''
         for x, char in enumerate(line):
-            if (x, y) in taboo_cells:
+            if (x, y) in taboo_cells_coords:
                 new_line += 'X'
             elif char == '.': # Replace target cells with blanks
                 new_line += ' '
