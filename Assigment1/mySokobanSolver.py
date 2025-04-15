@@ -83,7 +83,7 @@ def find_corners(warehouse):
     wh_string = warehouse.__str__()
     lines = process_lines(wh_string)
 
-    # Find all empty cells inside of the warehouse
+    # Find all empty cells inside the warehouse
     wall_pos = warehouse.walls  # list of tuples [(x,y)...]
 
     # Record blank cells (inside the warehouse)
@@ -92,7 +92,6 @@ def find_corners(warehouse):
     # Iterate over each line (a string) in lines (a list of strings)
     # For each line, iterate over each character in the string
     for y, line in enumerate(lines[1:(len(lines) - 1)], 1):  # don't look for corners in first or last line
-
         last_hash = len(line) - 1 - line[::-1].index('#')
         found_first_hash = False
 
@@ -181,7 +180,6 @@ def check_walls(warehouse, corners: list[tuple[int,int]]) -> list[tuple[int,int]
                 below = (x, y1 + 1) in walls
                 if above or below:
                     along_wall.append((x, y1))
-
         elif direction == 'V':
             y_start, y_end = sorted([y1, y2])
             for y in range(y_start + 1, y_end):
