@@ -331,16 +331,60 @@ class SokobanPuzzle(search.Problem):
         :param state2: state resulting from applying the action.
         :return: total cost of path to state 2.
         """
-        raise NotImplementedError
+        # Default cost for moving is 1
+        move_cost = 1
 
-    def value(self, state: tuple[int,int]):
+        # Unpack the states
+        worker_pos1, box_positions1 = state1
+        worker_pos2, box_positions2 = state2
+
+        # If the box positions are different, we pushed a box
+        if box_positions1 != box_positions2:
+            # Find which box was moved
+            for i, (box1, box2) in enumerate(zip(box_positions1, box_positions2)):
+                if box1 != box2:
+                    # This box was moved, add its weight to the cost
+                    move_cost += self.warehouse.weights[i]
+                    break
+
+        return c + move_cost
+
+    def goal_test(self, state):
+        """
+        Return True if the state is a goal state.
+        A state is a goal state if all boxes are on target positions.
+        :param state: current state (worker_position, box_positions).
+        :return: True if the state is a goal state, False otherwise.
+        """
+        # Unpack the state
+        _, box_positions = state
+
+        # Check if all boxes are on target positions
+        # We need to ensure that every box is on a target
+        return all(box in self.warehouse.targets for box in box_positions)
+
+    def value(self, state):
         """
         Compute the value of the given state.
         Used for optimization problems.
         :param state: current state.
         :return: value of the given state.
         """
-        raise NotImplementedError
+        # Unpack the state
+        _, box_positions = state
+
+        # For Sokoban, we can use the negative of the Manhattan distance
+        # from boxes to their nearest targets as a value function
+        total_distance = 0
+        for box in box_positions:
+            # Find the minimum Manhattan distance to any target
+            min_distance = float('inf')
+            for target in self.warehouse.targets:
+                distance = abs(box[0] - target[0]) + abs(box[1] - target[1])
+                min_distance = min(min_distance, distance)
+            total_distance += min_distance
+
+        return -total_distance  # Negative because we want to maximize value
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -361,9 +405,9 @@ def check_elem_action_seq(warehouse, action_seq):
         return a string representing the state of the puzzle after applying the sequence of actions.
         This must be the same string as the string returned by the method `Warehouse.__str__()`.
     """
-    
+
     ##         "INSERT YOUR CODE HERE"
-    
+
     raise NotImplementedError()
 
 
@@ -387,7 +431,48 @@ def solve_weighted_sokoban(warehouse):
             If the puzzle is already in a goal state, simply return []
             C is the total cost of the action sequence C
     """
-    
-    raise NotImplementedError()
+    # Create a SokobanPuzzle instance
+    problem = SokobanPuzzle(warehouse)
+
+    # Check if the puzzle is already in a goal state
+    if problem.goal_test(problem.initial):
+        return [], 0
+
+    # Define a heuristic function for A* search
+    def h(node):
+        # Manhattan distance from each box to its nearest target
+        total_distance = 0
+        # Unpack the state
+        _, box_positions = node.state
+
+        # Find the minimum weight of the boxes
+        min_weight = min(problem.warehouse.weights) if problem.warehouse.weights else 1
+
+        # Calculate the Manhattan distance from each box to its nearest target
+        for box in box_positions:
+            # Find the minimum Manhattan distance to any target
+            min_distance = float('inf')
+            for target in problem.warehouse.targets:
+                distance = abs(box[0] - target[0]) + abs(box[1] - target[1])
+                min_distance = min(min_distance, distance)
+            # Multiply by the minimum weight to ensure the heuristic is admissible
+            total_distance += min_distance * min_weight
+
+        return total_distance
+
+    # Use A* search to find a solution
+    solution_node = search.astar_graph_search(problem, h)
+
+    # If no solution was found, return 'Impossible'
+    if solution_node is None:
+        return 'Impossible', None
+
+    # Extract the action sequence from the solution node
+    action_sequence = solution_node.solution()
+
+    # Calculate the total cost of the action sequence
+    total_cost = solution_node.path_cost
+
+    return action_sequence, total_cost
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
