@@ -356,12 +356,7 @@ class SokobanPuzzle(search.Problem):
         :param state: current state (worker_position, box_positions).
         :return: True if the state is a goal state, False otherwise.
         """
-        # Unpack the state
-        _, box_positions = state
-
-        # Check if all boxes are on target positions
-        # We need to ensure that every box is on a target
-        return all(box in self.warehouse.targets for box in box_positions)
+        return self.goal == state
 
     def value(self, state):
         """
