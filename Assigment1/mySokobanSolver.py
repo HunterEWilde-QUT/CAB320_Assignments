@@ -265,13 +265,13 @@ class SokobanPuzzle(search.Problem):
     def __init__(self, warehouse):
         """
         Writes the lines of the warehouse file into the `rows` array;
-        searches each row for the initial state (i.e. the player's position '@')
+        searches each row for the initial state (i.e. the worker's position '@')
         & the goal state (i.e. the target square's position '.'),
         the indices of which are then stored in the `initial` and `goal` variables.
         :param warehouse: text file mapping the warehouse layout.
         """
-        self.initial = (int, int)
-        self.goal = (int, int)
+        self.initial = (int, int) # worker's initial position '@'
+        self.goal = (int, int) # position of the target cell '.'
         self.tabooCells = find_taboo_cells(warehouse)
 
         file = open(warehouse, 'r')
@@ -284,7 +284,7 @@ class SokobanPuzzle(search.Problem):
 
     def actions(self, state: tuple[int,int]) -> list[str]:
         """
-        :param state: a given state.
+        :param state: a given state, representing the current position of the worker.
         :return: a list of actions which can be performed in the given state.
         """
         up, down, left, right = ((state[0], state[1] + 1), (state[0], state[1] - 1),
@@ -305,7 +305,7 @@ class SokobanPuzzle(search.Problem):
     def result(self, state: tuple[int,int], action: str) -> tuple[int,int]:
         """
         Applies the given action to the given state and returns the resulting state.
-        :param state: a given state.
+        :param state: a given state, representing the current position of the worker.
         :param action: action to be applied.
             E.g. 'Left', 'Down', 'Right', 'Up'.
         :return: state resulting from applying the action to the given state.
@@ -326,7 +326,7 @@ class SokobanPuzzle(search.Problem):
         """
         Calculate the cost of a path from state 1 to state 2 via the given action, assuming cost c.
         :param c: cost to move to state 1.
-        :param state1: current state.
+        :param state1: current state, representing the current position of the worker.
         :param action: action of moving from state 1 to state 2.
         :param state2: state resulting from applying the action.
         :return: total cost of path to state 2.
@@ -353,7 +353,7 @@ class SokobanPuzzle(search.Problem):
         """
         Return True if the state is a goal state.
         A state is a goal state if all boxes are on target positions.
-        :param state: current state (worker_position, box_positions).
+        :param state: current state (worker position).
         :return: True if the state is a goal state, False otherwise.
         """
         return self.goal == state
