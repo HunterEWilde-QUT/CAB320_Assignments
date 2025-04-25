@@ -1,0 +1,22 @@
+Test6: Started with warehouse: warehouse_001.txt, Number of warehouses tested: 5
+
+&#09;Loaded warehouse: ./Assigment1/warehouses\warehouse_001.txt
+
+&#09;Boxes: 2, Walls: 22, Density: 0.52, Taboo Count: 5, Weights: [0, 0]
+
+&#09;Loaded warehouse: ./Assigment1/warehouses\warehouse_001_a.txt
+
+&#09;Boxes: 2, Walls: 22, Density: 0.52, Taboo Count: 5, Weights: [2, 6]
+
+&#09;Loaded warehouse: ./Assigment1/warehouses\warehouse_003.txt
+
+&#09;Boxes: 2, Walls: 29, Density: 0.54, Taboo Count: 12, Weights: [0, 0]
+
+&#09;Loaded warehouse: ./Assigment1/warehouses\warehouse_003_impossible.txt
+
+&#09;Boxes: 2, Walls: 30, Density: 0.56, Taboo Count: 13, Weights: [0, 0]
+
+&#09;Loaded warehouse: ./Assigment1/warehouses\warehouse_005n.txt
+
+&#09;Boxes: 4, Walls: 40, Density: 0.52, Taboo Count: 16, Weights: [0, 0, 0, 0]
+

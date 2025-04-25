@@ -48,14 +48,18 @@ def create_report(start_warehouse, end_warehouse):
     # Create the new test file
     test_file_path = os.path.join(testing_dir, f'Test{next_test_num}.txt')
     with open(test_file_path, 'w') as f:
-        f.write(f"Test{next_test_num}: {start_warehouse}, {end_warehouse}\n")
+        f.write(f"Test{next_test_num}: {start_warehouse}, {end_warehouse}\n\n")
 
     return test_file_path 
 
-def edit_report(path, line):
+def edit_report(path, line, header=False):
     """ Edit the report file with the given line. """
-    with open(path, 'a') as f:
-        f.write(line + '\n')
+    if header:
+        with open(path, 'a') as f:
+            f.write(line + '\n\n')
+    else:
+        with open(path, 'a') as f:
+            f.write('\t' + line + '\n\n')
 
 # create_report(1, 50) - Tested create_report function and it works as expected.
 # edit_report('testing/Test1.txt', 'Test line 1')  - Tested edit_report function and it works as expected.
@@ -148,7 +152,7 @@ def load_warehouse(file_path, report_path):
     """ Load a warehouse from a file. Write warehouse name to report file. """
     wh = sokoban.Warehouse()
     wh.load_warehouse(file_path)
-    edit_report(report_path, f"Loaded warehouse: {file_path}")
+    edit_report(report_path, f"Loaded warehouse: {file_path}", header=True)
     return wh
 
 # wh = load_warehouse("./warehouses/warehouse_01.txt", "testing/Test1.txt")
@@ -163,6 +167,12 @@ def test_warehouse(file_path, report_path):
 
     # Test the solver
 
+    solution = "solved"     # Placeholder: expects solved, not solved, or impossible.
+    time = 30               # Placeholder: time taken to solve the warehouse.
+    cost = 100              # Placeholder: cost of the solution.
+
+    edit_report(report_path, f"Result: Solved? = {solution}, Time: {time:.2f} seconds, Cost: {cost}")
+
     # Write time to solve and cost to the report file, then create a new line to seperate.
 
     return
@@ -173,19 +183,19 @@ def test_batch(start_warehouse, num_warehouses):
     report_path = create_report(f"Started with warehouse: {start_warehouse}", f"Number of warehouses tested: {num_warehouses}")
 
     # Get the list of warehouse files 
-    wh_files = sorted(os.listdir("./warehouses"))  # Get the list of files in the warehouses directory
+    wh_files = sorted(os.listdir("./Assigment1/warehouses"))  # Get the list of files in the warehouses directory
     start_index = wh_files.index(start_warehouse)
 
     # Select the batch of warehouses to test
     batch_files = wh_files[start_index:start_index + num_warehouses]
 
     for file_path in batch_files:
-        full_file_path = os.path.join("./warehouses", file_path) # Construct full path
+        full_file_path = os.path.join("./Assigment1/warehouses", file_path) # Construct full path
         test_warehouse(full_file_path, report_path)
 
     return print(f"Batch test completed. Report saved to {report_path}.")
 
 
-# test_batch("warehouse_01.txt", 5): Seems to work as expected, should retest after updating mySokobanSolver.py fro github.
+test_batch("warehouse_001.txt", 20) # Seems to work as expected, should retest after updating mySokobanSolver.py fro github.
 
 # WRITE A FUNCTION TO COMBINE TESTING AND CONTROL THROUGH COMMAND LINE.

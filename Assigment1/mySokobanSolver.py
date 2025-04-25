@@ -383,27 +383,87 @@ class SokobanPuzzle(search.Problem):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+# Problem domains addressed by AI have *hard* and *soft* constraints
+# Identify the hard constraints in this problem's definition
+
+# Defining check functions, returns True if action legal, False if action illegal
+
+# Direction deltas: (dx, dy)
+deltas = {
+    'Left': (-1, 0),
+    'Right': (1, 0),
+    'Up': (0, -1),
+    'Down': (0, 1)
+}
+
+def get_positions(warehouse, action):
+    """Calculate player and potential box positions for an action."""
+    x, y = warehouse.worker
+    dx, dy = deltas[action]
+    # Player's destination
+    player_pos = (x + dx, y + dy)
+    # Potential box destination (if there's a box at player's destination)
+    box_pos = (player_pos[0] + dx, player_pos[1] + dy)
+    
+    return player_pos, box_pos
+
+def is_legal_action(warehouse, player_pos, box_pos):
+    """Check if an action is legal using precalculated positions."""
+    # Check if player destination is a wall
+    if player_pos in warehouse.walls:
+        return False
+    
+    # Check if player destination has a box
+    if player_pos in warehouse.boxes:
+        # Check if box destination is valid (no walls or other boxes)
+        if box_pos in warehouse.walls or box_pos in warehouse.boxes:
+            return False
+    
+    return True
+
+def update_warehouse(warehouse, action, player_pos, box_pos):
+    """Update warehouse state based on a legal action using precalculated positions."""
+
+    # If we're pushing a box
+    if player_pos in warehouse.boxes:
+        new_boxes = list(warehouse.boxes)
+        box_index = new_boxes.index(player_pos)
+        new_boxes[box_index] = box_pos
+        return warehouse.copy(worker=player_pos, boxes=new_boxes)
+    else:
+        return warehouse.copy(worker=player_pos)
+
 def check_elem_action_seq(warehouse, action_seq):
-    """
-    Determine if the sequence of actions listed in 'action_seq' is legal or not.
+    """Validate and execute a sequence of actions."""
+    current_warehouse = warehouse
+    
+    for action in action_seq:
+        # Calculate positions once
+        player_pos, box_pos = get_positions(current_warehouse, action)
+        
+        # Check if action is legal
+        if not is_legal_action(current_warehouse, player_pos, box_pos):
+            return "Impossible"
+            
+        # Update warehouse
+        current_warehouse = update_warehouse(current_warehouse, action, player_pos, box_pos)
+    
+    return current_warehouse.__str__()
 
-    Important notes:
-      - a legal sequence of actions does not necessarily solve the puzzle.
-      - an action is legal even if it pushes a box onto a taboo cell.
+# TESTING
+def run_tests(path):
+    warehouse = intialise_warehouse(path)
+    print(warehouse.__str__())
+    
+    # Testing legal actions
+    print(f"Legal action 'R': {is_legal_action(warehouse, 'R')}")
+    print(f"Legal action 'U': {is_legal_action(warehouse, 'U')}")
+    
+    # Testing action sequence
+    print(check_elem_action_seq(warehouse, ["D","R","L"]))
 
-    :param warehouse: a valid Warehouse object
-    :param action_seq: a sequence of legal actions.
-        E.g. ['Left', 'Down', Down','Right', 'Up', 'Down']
-    :return: The string 'Impossible', if one of the action was not valid.
-        E.g. if the agent tries to push two boxes at the same time, or push a box into a wall.
-        Otherwise, if all actions were successful,
-        return a string representing the state of the puzzle after applying the sequence of actions.
-        This must be the same string as the string returned by the method `Warehouse.__str__()`.
-    """
-
-    ##         "INSERT YOUR CODE HERE"
-
-    raise NotImplementedError()
+# Uncomment to run tests
+# run_tests("./Assigment1/warehouses/warehouse_006n.txt")
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

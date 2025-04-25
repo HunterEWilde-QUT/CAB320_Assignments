@@ -1,0 +1,122 @@
+Test10: Started with warehouse: warehouse_001.txt, Number of warehouses tested: 20
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_001.txt
+
+	Boxes: 2, Walls: 22, Density: 0.52, Taboo Count: 5, Weights: [0, 0]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_001_a.txt
+
+	Boxes: 2, Walls: 22, Density: 0.52, Taboo Count: 5, Weights: [2, 6]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_003.txt
+
+	Boxes: 2, Walls: 29, Density: 0.54, Taboo Count: 12, Weights: [0, 0]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_003_impossible.txt
+
+	Boxes: 2, Walls: 30, Density: 0.56, Taboo Count: 13, Weights: [0, 0]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_005n.txt
+
+	Boxes: 4, Walls: 40, Density: 0.52, Taboo Count: 16, Weights: [0, 0, 0, 0]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_006n.txt
+
+	Boxes: 6, Walls: 49, Density: 0.40, Taboo Count: 20, Weights: [0, 0, 0, 0, 0, 0]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_007.txt
+
+	Boxes: 6, Walls: 26, Density: 0.46, Taboo Count: 18, Weights: [0, 0, 0, 0, 0, 0]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_008a.txt
+
+	Boxes: 2, Walls: 28, Density: 0.43, Taboo Count: 12, Weights: [1, 99]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_008b.txt
+
+	Boxes: 2, Walls: 28, Density: 0.43, Taboo Count: 12, Weights: [1, 1]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_009.txt
+
+	Boxes: 2, Walls: 22, Density: 0.52, Taboo Count: 5, Weights: [3, 87]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_011.txt
+
+	Boxes: 2, Walls: 34, Density: 0.47, Taboo Count: 12, Weights: [0, 0]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_013.txt
+
+	Boxes: 3, Walls: 28, Density: 0.44, Taboo Count: 11, Weights: [0, 0, 0]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_015.txt
+
+	Boxes: 2, Walls: 30, Density: 0.48, Taboo Count: 11, Weights: [0, 0]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_017.txt
+
+	Boxes: 3, Walls: 22, Density: 0.52, Taboo Count: 8, Weights: [0, 0, 0]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_019.txt
+
+	Boxes: 2, Walls: 29, Density: 0.45, Taboo Count: 11, Weights: [0, 0]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_021.txt
+
+	Boxes: 2, Walls: 23, Density: 0.55, Taboo Count: 10, Weights: [0, 0]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_023.txt
+
+	Boxes: 2, Walls: 25, Density: 0.51, Taboo Count: 8, Weights: [0, 0]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_025.txt
+
+	Boxes: 3, Walls: 24, Density: 0.49, Taboo Count: 10, Weights: [0, 0, 0]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_027.txt
+
+	Boxes: 2, Walls: 27, Density: 0.55, Taboo Count: 4, Weights: [0, 0]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
+Loaded warehouse: ./Assigment1/warehouses\warehouse_029.txt
+
+	Boxes: 2, Walls: 44, Density: 0.44, Taboo Count: 23, Weights: [0, 0]
+
+	Result: Solved = Solved, Time: 30.00 seconds, Cost: 100
+
