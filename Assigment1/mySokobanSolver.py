@@ -365,6 +365,12 @@ class SokobanPuzzle(search.Problem):
                 # Update the `boxes` attribute
                 self.boxes[i] = new_box_positions[i]
 
+                # Check if the box's new position is a goal
+                for j in range(len(self.goals)):
+                    goal_pos = self.goals[j][0], self.goals[j][1]
+                    if new_box_pos == goal_pos:
+                        self.goals[j][2] = True # this goal is now occupied
+
                 break
 
         # Return the new state
@@ -540,13 +546,13 @@ def solve_weighted_sokoban(warehouse):
         _, box_positions = node.state
 
         # Find the minimum weight of the boxes
-        min_weight = min(problem.warehouse.weights) if problem.warehouse.weights else 1
+        min_weight = min(problem.weights) if problem.weights else 1
 
         # Calculate the Manhattan distance from each box to its nearest target
         for box in box_positions:
             # Find the minimum Manhattan distance to any target
             min_distance = float('inf')
-            for target in problem.warehouse.targets:
+            for target in problem.goals:
                 distance = abs(box[0] - target[0]) + abs(box[1] - target[1])
                 min_distance = min(min_distance, distance)
             # Multiply by the minimum weight to ensure the heuristic is admissible
