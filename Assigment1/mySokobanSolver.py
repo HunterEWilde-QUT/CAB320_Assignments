@@ -264,27 +264,31 @@ class SokobanPuzzle(search.Problem):
     """
     def __init__(self, warehouse):
         """
-        Writes the lines of the warehouse file into the `rows` array;
-        searches each row for the initial state (i.e. the worker's position '@')
-        & the goal state (i.e. the target square's position '.'),
-        the indices of which are then stored in the `initial` and `goal` variables.
+        Reads a warehouse text file and creates a SokobanPuzzle instance,
+        which captures the worker's initial position '@', the target cell '.', the boxes' initial positions '$' or '*',
+        & the locations of all taboo cells via the taboo_cells method.
         :param warehouse: text file mapping the warehouse layout.
         """
         self.initial = (int, int) # worker's initial position '@'
         self.goal = (int, int) # position of the target cell '.'
         self.tabooCells = find_taboo_cells(warehouse)
+        self.boxes = []
 
         file = open(warehouse, 'r')
         rows = file.readlines()
         for row in rows:
             if '@' in row:
-                self.initial = (row.index('@'), rows.index(row)) # tuple[int x,int y]
+                self.initial = (row.index('@'), rows.index(row)) # (x,y)
             if '.' in row:
-                self.goal = (row.index('.'), rows.index(row)) # tuple[int x,int y]
+                self.goal = (row.index('.'), rows.index(row)) # (x,y)
+            if '$' in row:
+                self.boxes.append((row.index('$'), rows.index(row), False)) # [(x, y, !at_goal), ...]
+            if '*' in row:
+                self.boxes.append((row.index('*'), rows.index(row), True)) # [(x, y, at_goal), ...]
 
     def actions(self, state: tuple[int,int]) -> list[str]:
         """
-        :param state: a given state, representing the current position of the worker.
+        :param state: a given stat; the current position of the worker & all boxes.
         :return: a list of actions which can be performed in the given state.
         """
         up, down, left, right = ((state[0], state[1] + 1), (state[0], state[1] - 1),
@@ -348,15 +352,6 @@ class SokobanPuzzle(search.Problem):
                     break
 
         return c + move_cost
-
-    def goal_test(self, state):
-        """
-        Return True if the state is a goal state.
-        A state is a goal state if all boxes are on target positions.
-        :param state: current state (worker position).
-        :return: True if the state is a goal state, False otherwise.
-        """
-        return self.goal == state
 
     def value(self, state):
         """
