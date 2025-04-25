@@ -550,7 +550,7 @@ def solve_weighted_sokoban(warehouse):
         _, box_positions = node.state
 
         # Find the minimum weight of the boxes
-        min_weight = min(problem.weights) if problem.weights else 1
+        min_weight = 1
 
         # Calculate the Manhattan distance from each box to its nearest target
         for box in box_positions:
