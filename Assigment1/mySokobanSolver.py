@@ -303,7 +303,9 @@ class SokobanPuzzle(search.Problem):
             if '.' in row:
                 self.goals.append((row.index('.'), rows.index(row), False)) # [(x,y, !has_box), ...]
             if '*' in row:
+                # A box ontop of a goal
                 self.goals.append((row.index('*'), rows.index(row), True)) # [(x, y, has_box), ...]
+                self.boxes.append((row.index('*'), rows.index(row))) # [(x, y), ...]
             if '$' in row:
                 self.boxes.append((row.index('$'), rows.index(row))) # [(x, y), ...]
 
