@@ -356,22 +356,24 @@ class SokobanPuzzle(search.Problem):
         new_box_positions = box_positions
 
         # Check if there's a box at the new worker position
-        for i, (box_x, box_y) in enumerate(box_positions):
-            if (box_x, box_y) == new_worker_pos:
-                # Calculate the new box position
-                new_box_pos = move((box_x, box_y), action)
+        for i, box_pos in enumerate(box_positions):
+            if new_worker_pos == box_pos:
+                # Move the box in the direction of the action
+                new_box_pos = move(box_pos, action)
 
-                # Update box position in the list
-                new_box_positions[i] = new_box_pos
+                # Check if the box can move to the new position
+                if new_box_pos not in self.tabooCells and new_box_pos not in box_positions:
+                    # Update box position
+                    new_box_positions[i] = new_box_pos
+                    self.boxes[self.boxes.index(box_pos)] = new_box_pos
 
-                # Update the `boxes` attribute
-                self.boxes[i] = new_box_positions[i]
+                    # Check if the box's new position is a goal
+                    for j in range(len(self.goals)):
+                        goal_pos = self.goals[j][0], self.goals[j][1]
+                        if new_box_pos == goal_pos:
+                            self.goals[j][2] = True # this goal is now occupied
 
-                # Check if the box's new position is a goal
-                for j in range(len(self.goals)):
-                    goal_pos = self.goals[j][0], self.goals[j][1]
-                    if new_box_pos == goal_pos:
-                        self.goals[j][2] = True # this goal is now occupied
+                            break
 
                 break
 
