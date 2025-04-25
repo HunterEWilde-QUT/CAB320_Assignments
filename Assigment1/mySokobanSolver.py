@@ -253,6 +253,26 @@ def taboo_cells(warehouse) -> str:
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+def move(pos: tuple[int,int], direction: str) -> tuple[int,int]:
+    """
+    Updates the position of a given object to move in one of four directions.
+    :param pos: a given position (x,y).
+    :param direction: a given direction.
+    :return: the new position (x,y) after moving in the given direction.
+    """
+    x, y = pos
+
+    if direction == 'Up':
+        return x, y + 1
+    if direction == 'Down':
+        return x, y - 1
+    if direction == 'Left':
+        return x - 1, y
+    if direction == 'Right':
+        return x + 1, y
+
+    return pos # by default, return the same position if the direction is invalid
+
 class SokobanPuzzle(search.Problem):
     """
     An instance of the class 'SokobanPuzzle' represents a Sokoban puzzle.
@@ -265,14 +285,15 @@ class SokobanPuzzle(search.Problem):
     def __init__(self, warehouse):
         """
         Reads a warehouse text file and creates a SokobanPuzzle instance,
-        which captures the worker's initial position '@', the target cell '.', the boxes' initial positions '$' or '*',
+        which captures the worker's initial position '@', the boxes' initial positions '$',
+        the locations of all goals '.' (unoccupied) or '*' (occupied),
         & the locations of all taboo cells via the taboo_cells method.
         :param warehouse: text file mapping the warehouse layout.
         """
-        self.initial = (int, int) # worker's initial position '@'
-        self.goal = (int, int) # position of the target cell '.'
-        self.tabooCells = find_taboo_cells(warehouse)
-        self.boxes = []
+        self.initial = (int, int) # initial position of the worker '@'
+        self.goals = [] # positions of the target cells '.' (unoccupied) or '*' (occupied)
+        self.boxes = [] # positions of the boxes '$'
+        self.tabooCells = find_taboo_cells(warehouse)  # positions of the taboo cells 'X'
 
         file = open(warehouse, 'r')
         rows = file.readlines()
@@ -280,19 +301,23 @@ class SokobanPuzzle(search.Problem):
             if '@' in row:
                 self.initial = (row.index('@'), rows.index(row)) # (x,y)
             if '.' in row:
-                self.goal = (row.index('.'), rows.index(row)) # (x,y)
-            if '$' in row:
-                self.boxes.append((row.index('$'), rows.index(row), False)) # [(x, y, !at_goal), ...]
+                self.goals.append((row.index('.'), rows.index(row), False)) # [(x,y, !has_box), ...]
             if '*' in row:
-                self.boxes.append((row.index('*'), rows.index(row), True)) # [(x, y, at_goal), ...]
+                self.goals.append((row.index('*'), rows.index(row), True)) # [(x, y, has_box), ...]
+            if '$' in row:
+                self.boxes.append((row.index('$'), rows.index(row))) # [(x, y), ...]
 
-    def actions(self, state: tuple[int,int]) -> list[str]:
+    def actions(self, state: tuple[tuple[int,int],list[tuple[int,int]]]) -> list[str]:
         """
-        :param state: a given stat; the current position of the worker & all boxes.
+        :param state: a given state containing the current position of the worker (x,y)
+            & the list of boxes' positions [(x,y), (x,y), ...].
         :return: a list of actions which can be performed in the given state.
         """
-        up, down, left, right = ((state[0], state[1] + 1), (state[0], state[1] - 1),
-                                 (state[0] - 1, state[1]), (state[0] + 1, state[1]))
+        # Unpack the worker's position from the state
+        worker_x, worker_y = state[0]
+        # Cells surrounding the worker
+        up, down, left, right = ((worker_x, worker_y + 1), (worker_x, worker_y - 1),
+                                 (worker_x - 1, worker_y), (worker_x + 1, worker_y))
         actions = []
 
         if up not in self.tabooCells:
@@ -306,31 +331,50 @@ class SokobanPuzzle(search.Problem):
 
         return actions
 
-    def result(self, state: tuple[int,int], action: str) -> tuple[int,int]:
+    def result(self, state: tuple[tuple[int,int],list[tuple[int,int]]], action: str) -> tuple[tuple[int,int],list[tuple[int,int]]]:
         """
         Applies the given action to the given state and returns the resulting state.
-        :param state: a given state, representing the current position of the worker.
+        :param state: a given state, representing the current position of the worker & boxes.
         :param action: action to be applied.
             E.g. 'Left', 'Down', 'Right', 'Up'.
         :return: state resulting from applying the action to the given state.
         """
-        if action in self.actions(state):
-            if action == 'Up':
-                return state[0], state[1] + 1
-            elif action == 'Down':
-                return state[0], state[1] - 1
-            elif action == 'Left':
-                return state[0] - 1, state[1]
-            elif action == 'Right':
-                return state[0] + 1, state[1]
-        else:
+        # If the action is not valid, return the current state
+        if action not in self.actions(state):
             return state
 
-    def path_cost(self, c, state1: tuple[int,int], action: str, state2: tuple[int,int]):
+        # Unpack the state
+        worker_pos = state[0]  # worker's current position (x, y)
+        box_positions = state[1]  # list of boxes' positions [(x, y), ...]
+
+        # Calculate the new worker position based on action
+        new_worker_pos = move(worker_pos, action)
+
+        # Create a copy of box positions to modify
+        new_box_positions = box_positions
+
+        # Check if there's a box at the new worker position
+        for i, (box_x, box_y) in enumerate(box_positions):
+            if (box_x, box_y) == new_worker_pos:
+                # Calculate the new box position
+                new_box_pos = move((box_x, box_y), action)
+
+                # Update box position in the list
+                new_box_positions[i] = new_box_pos
+
+                # Update the `boxes` attribute
+                self.boxes[i] = new_box_positions[i]
+
+                break
+
+        # Return the new state
+        return new_worker_pos, new_box_positions
+
+    def path_cost(self, c, state1: tuple[tuple[int,int],list[tuple[int,int]]], action: str, state2: tuple[tuple[int,int],list[tuple[int,int]]]):
         """
         Calculate the cost of a path from state 1 to state 2 via the given action, assuming cost c.
         :param c: cost to move to state 1.
-        :param state1: current state, representing the current position of the worker.
+        :param state1: current state, representing the current position of the worker & boxes.
         :param action: action of moving from state 1 to state 2.
         :param state2: state resulting from applying the action.
         :return: total cost of path to state 2.
@@ -348,20 +392,20 @@ class SokobanPuzzle(search.Problem):
             for i, (box1, box2) in enumerate(zip(box_positions1, box_positions2)):
                 if box1 != box2:
                     # This box was moved, add its weight to the cost
-                    move_cost += self.warehouse.weights[i]
+                    move_cost += self.weights[i]
                     break
 
         return c + move_cost
 
-    def value(self, state):
+    def value(self, state2: tuple[tuple[int,int],list[tuple[int,int]]]):
         """
         Compute the value of the given state.
         Used for optimization problems.
-        :param state: current state.
+        :param state2: current state, representing the current position of the worker & boxes.
         :return: value of the given state.
         """
         # Unpack the state
-        _, box_positions = state
+        box_positions = state2[1]
 
         # For Sokoban, we can use the negative of the Manhattan distance
         # from boxes to their nearest targets as a value function
@@ -369,7 +413,7 @@ class SokobanPuzzle(search.Problem):
         for box in box_positions:
             # Find the minimum Manhattan distance to any target
             min_distance = float('inf')
-            for target in self.warehouse.targets:
+            for target in self.goals:
                 distance = abs(box[0] - target[0]) + abs(box[1] - target[1])
                 min_distance = min(min_distance, distance)
             total_distance += min_distance
