@@ -167,7 +167,7 @@ class Warehouse:
 
     def extract_locations(self, lines):
         '''
-        Extract positional information from the the list of string 'lines'.
+        Extract positional information from the list of string 'lines'.
         The list of string 'lines' represents the puzzle.
         This function sets the fields
           self.worker, self.boxes, self.targets and self.walls

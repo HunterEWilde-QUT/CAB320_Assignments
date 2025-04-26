@@ -285,29 +285,18 @@ class SokobanPuzzle(search.Problem):
     def __init__(self, warehouse):
         """
         Reads a warehouse text file and creates a SokobanPuzzle instance,
-        which captures the worker's initial position '@', the boxes' initial positions '$',
-        the locations of all goals '.' (unoccupied) or '*' (occupied),
-        & the locations of all taboo cells via the taboo_cells method.
+        which captures the initial state of the warehouse
+        & other information about the warehouse stored as a Warehouse object
+        (e.g. worker position, boxes' positions, weights, wall positions).
         :param warehouse: text file mapping the warehouse layout.
         """
-        self.initial = (int, int) # initial position of the worker '@'
-        self.goals = [] # positions of the target cells '.' (unoccupied) or '*' (occupied)
-        self.boxes = [] # positions of the boxes '$'
+        self.initial = warehouse
+        # unspecified goal
         self.tabooCells = find_taboo_cells(warehouse)  # positions of the taboo cells 'X'
 
-        file = open(warehouse, 'r')
-        rows = file.readlines()
-        for row in rows:
-            if '@' in row:
-                self.initial = (row.index('@'), rows.index(row)) # (x,y)
-            if '.' in row:
-                self.goals.append((row.index('.'), rows.index(row), False)) # [(x,y, !has_box), ...]
-            if '*' in row:
-                # A box ontop of a goal
-                self.goals.append((row.index('*'), rows.index(row), True)) # [(x, y, has_box), ...]
-                self.boxes.append((row.index('*'), rows.index(row))) # [(x, y), ...]
-            if '$' in row:
-                self.boxes.append((row.index('$'), rows.index(row))) # [(x, y), ...]
+        # Create a Warehouse object
+        self.warehouse = sokoban.Warehouse()
+        self.warehouse.from_string(warehouse)
 
     def actions(self, state: tuple[tuple[int,int],list[tuple[int,int]]]) -> list[str]:
         """
