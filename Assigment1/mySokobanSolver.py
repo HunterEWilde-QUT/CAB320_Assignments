@@ -441,36 +441,38 @@ deltas = {
     'Down': (0, 1)
 }
 
-def is_legal_action(warehouse, player_pos, box_pos):
+def is_legal_action(warehouse, worker_pos, box_pos):
     """
     Check if an action is legal using precalculated positions.
     :param warehouse: a Warehouse object.
+    :param worker_pos: a given position of the worker.
+    :param box_pos: a given position of the box.
     """
-    # Check if player destination is a wall
-    if player_pos in warehouse.walls:
+    # Check if the worker's destination is a wall
+    if worker_pos in warehouse.walls:
         return False
     
-    # Check if player destination has a box
-    if player_pos in warehouse.boxes:
-        # Check if box destination is valid (no walls or other boxes)
+    # Check if the worker's destination has a box
+    if worker_pos in warehouse.boxes:
+        # Check if the box's destination is valid (no walls or other boxes)
         if box_pos in warehouse.walls or box_pos in warehouse.boxes:
             return False
     
     return True
 
-def update_warehouse(warehouse, action, player_pos, box_pos):
+def update_warehouse(warehouse, action, worker_pos, box_pos):
     """
     Update warehouse state based on a legal action using precalculated positions.
     """
 
     # If we're pushing a box
-    if player_pos in warehouse.boxes:
+    if worker_pos in warehouse.boxes:
         new_boxes = list(warehouse.boxes)
-        box_index = new_boxes.index(player_pos)
+        box_index = new_boxes.index(worker_pos)
         new_boxes[box_index] = box_pos
-        return warehouse.copy(worker=player_pos, boxes=new_boxes)
+        return warehouse.copy(worker=worker_pos, boxes=new_boxes)
     else:
-        return warehouse.copy(worker=player_pos)
+        return warehouse.copy(worker=worker_pos)
 
 def check_elem_action_seq(warehouse, action_seq):
     """
@@ -484,14 +486,14 @@ def check_elem_action_seq(warehouse, action_seq):
     for action in action_seq:
         # Calculate the next warehouse state resulting from the action
         next_warehouse = move_warehouse(current_warehouse, action)
-        player_pos, box_pos = next_warehouse.worker, next_warehouse.boxes
+        worker_pos, box_pos = next_warehouse.worker, next_warehouse.boxes
         
         # Check if action is legal
-        if not is_legal_action(current_warehouse, player_pos, box_pos):
+        if not is_legal_action(current_warehouse, worker_pos, box_pos):
             return "Impossible"
             
         # Update warehouse
-        current_warehouse = update_warehouse(current_warehouse, action, player_pos, box_pos)
+        current_warehouse = update_warehouse(current_warehouse, action, worker_pos, box_pos)
     
     return current_warehouse.__str__()
 
