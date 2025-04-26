@@ -328,7 +328,7 @@ class SokobanPuzzle(search.Problem):
 
     def actions(self, state: str) -> list[str]:
         """
-        Gives the list of non-taboo moves a worker can perform from a given state.
+        Gives the list of valid moves a worker can perform from a given state.
         :param state: a given version of the warehouse.
         :return: a list of actions which can be performed in the given state.
         """
@@ -337,18 +337,21 @@ class SokobanPuzzle(search.Problem):
         current_warehouse.from_string(state)
         worker_x, worker_y = current_warehouse.worker
 
-        # Cells surrounding the worker
+        # Unpack the walls from the SokobanPuzzle object
+        walls = self.warehouse.walls
+
+        # Calculate the positions of the cells surrounding the worker
         up, down, left, right = ((worker_x, worker_y + 1), (worker_x, worker_y - 1),
                                  (worker_x - 1, worker_y), (worker_x + 1, worker_y))
         actions = []
 
-        if up not in self.tabooCells:
+        if up not in walls:
             actions.append('Up')
-        if down not in self.tabooCells:
+        if down not in walls:
             actions.append('Down')
-        if left not in self.tabooCells:
+        if left not in walls:
             actions.append('Left')
-        if right not in self.tabooCells:
+        if right not in walls:
             actions.append('Right')
 
         return actions
