@@ -253,7 +253,7 @@ def taboo_cells(warehouse) -> str:
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-def move(pos: tuple[int,int], direction: str):
+def move_pos(pos: tuple[int,int], direction: str) -> tuple[int,int]:
     """
     Updates the position of a given object to move in one of four directions.
     :param pos: a given position (x,y).
@@ -272,6 +272,34 @@ def move(pos: tuple[int,int], direction: str):
         return x + 1, y
 
     return pos # by default, return the same position if the direction is invalid
+
+def move_warehouse(current_warehouse, action):
+    """
+    Updates a warehouse resulting from a given movement by the worker.
+    Checks if the worker has moved onto a box. If so, the box is pushed.
+    :param current_warehouse: a given Warehouse object.
+    :param action: a movement performed by the worker.
+    """
+    worker_pos = current_warehouse.worker
+    box_positions = current_warehouse.boxes
+
+    # Calculate the new worker position based on action
+    new_worker_pos = move_pos(worker_pos, action)
+
+    # Create a copy of box positions to modify
+    new_box_positions = box_positions
+
+    # Check if there's a box at the new worker position
+    for i, box_pos in enumerate(box_positions):
+        if new_worker_pos == box_pos:
+            new_box_pos = move_pos(box_pos, action)
+            new_box_positions[i] = new_box_pos
+
+            break
+
+    # Assemble & return the new warehouse
+    resulting_warehouse = current_warehouse.copy(worker=new_worker_pos, boxes=new_box_positions)
+    return resulting_warehouse
 
 class SokobanPuzzle(search.Problem):
     """
@@ -331,47 +359,15 @@ class SokobanPuzzle(search.Problem):
         :param state: a given state of the warehouse.
         :param action: a movement performed by the worker.
             E.g. 'Left', 'Down', 'Right', 'Up'.
-        :return: state resulting from applying the action to the given state.
+        :return: a new state resulting from applying the action to the given state.
         """
         # If the action is not valid, return the current state
         if action not in self.actions(state):
             return state
-
-        # Unpack the state
-        current_warehouse = sokoban.Warehouse()
-        current_warehouse.from_string(state)
-
-        worker_pos = current_warehouse.worker
-        box_positions = current_warehouse.boxes
-
-        # Calculate the new worker position based on action
-        new_worker_pos = move(worker_pos, action)
-
-        # Create a copy of box positions to modify
-        new_box_positions = box_positions
-
-        # Check if there's a box at the new worker position
-        for i, box_pos in enumerate(box_positions):
-            if new_worker_pos == box_pos:
-                new_box_pos = move(box_pos, action)
-
-                # Check if the box can move to the new position
-                if new_box_pos not in self.tabooCells and new_box_pos not in box_positions:
-                    new_box_positions[i] = new_box_pos
-                    """
-                    # Check if the box's new position is a goal
-                    for j in range(len(self.goals)):
-                        goal_pos = self.goals[j][0], self.goals[j][1]
-                        if new_box_pos == goal_pos:
-                            self.goals[j][2] = True # this goal is now occupied
-
-                            break
-                    """
-                break
-
-        # Assemble & return the new state
-        resulting_warehouse = current_warehouse.copy(worker=new_worker_pos, boxes=new_box_positions)
-        return resulting_warehouse.__str__()
+        else:
+            warehouse = sokoban.Warehouse()
+            warehouse.from_string(state)
+            return move_warehouse(warehouse, action).__str__()
 
     def path_cost(self, c, state1: str, action: str, state2: str):
         """
@@ -446,7 +442,9 @@ deltas = {
 }
 
 def get_positions(warehouse, action):
-    """Calculate player and potential box positions for an action."""
+    """
+    Calculate player and potential box positions for an action.
+    """
     x, y = warehouse.worker
     dx, dy = deltas[action]
     # Player's destination
@@ -490,6 +488,8 @@ def update_warehouse(warehouse, action, player_pos, box_pos):
 def check_elem_action_seq(warehouse, action_seq):
     """
     Validate and execute a sequence of actions.
+    :param warehouse: a Warehouse object representing the current state of the warehouse.
+    :param action_seq: a list of actions to be executed.
     """
     current_warehouse = warehouse
     
