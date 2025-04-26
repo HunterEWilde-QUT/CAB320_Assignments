@@ -298,14 +298,17 @@ class SokobanPuzzle(search.Problem):
         self.warehouse = sokoban.Warehouse()
         self.warehouse.from_string(warehouse)
 
-    def actions(self, state: tuple[tuple[int,int],list[tuple[int,int]]]) -> list[str]:
+    def actions(self, state: str) -> list[str]:
         """
-        :param state: a given state containing the current position of the worker (x,y)
-            & the list of boxes' positions [(x,y), (x,y), ...].
+        Gives the list of non-taboo moves a worker can perform from a given state.
+        :param state: a given version of the warehouse.
         :return: a list of actions which can be performed in the given state.
         """
-        # Unpack the worker's position from the state
-        worker_x, worker_y = state[0]
+        # Unpack the worker's position from the current state
+        current_warehouse = sokoban.Warehouse()
+        current_warehouse.from_string(state)
+        worker_x, worker_y = current_warehouse.worker
+
         # Cells surrounding the worker
         up, down, left, right = ((worker_x, worker_y + 1), (worker_x, worker_y - 1),
                                  (worker_x - 1, worker_y), (worker_x + 1, worker_y))
@@ -322,7 +325,7 @@ class SokobanPuzzle(search.Problem):
 
         return actions
 
-    def result(self, state: tuple[tuple[int,int],list[tuple[int,int]]], action: str) -> tuple[tuple[int,int],list[tuple[int,int]]]:
+    def result(self, state, action: str) -> tuple[tuple[int,int],list[tuple[int,int]]]:
         """
         Applies the given action to the given state and returns the resulting state.
         :param state: a given state, representing the current position of the worker & boxes.
@@ -460,7 +463,9 @@ def is_legal_action(warehouse, player_pos, box_pos):
     return True
 
 def update_warehouse(warehouse, action, player_pos, box_pos):
-    """Update warehouse state based on a legal action using precalculated positions."""
+    """
+    Update warehouse state based on a legal action using precalculated positions.
+    """
 
     # If we're pushing a box
     if player_pos in warehouse.boxes:
@@ -472,7 +477,9 @@ def update_warehouse(warehouse, action, player_pos, box_pos):
         return warehouse.copy(worker=player_pos)
 
 def check_elem_action_seq(warehouse, action_seq):
-    """Validate and execute a sequence of actions."""
+    """
+    Validate and execute a sequence of actions.
+    """
     current_warehouse = warehouse
     
     for action in action_seq:
