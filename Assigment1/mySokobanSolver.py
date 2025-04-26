@@ -441,19 +441,6 @@ deltas = {
     'Down': (0, 1)
 }
 
-def get_positions(warehouse, action):
-    """
-    Calculate player and potential box positions for an action.
-    """
-    x, y = warehouse.worker
-    dx, dy = deltas[action]
-    # Player's destination
-    player_pos = (x + dx, y + dy)
-    # Potential box destination (if there's a box at player's destination)
-    box_pos = (player_pos[0] + dx, player_pos[1] + dy)
-    
-    return player_pos, box_pos
-
 def is_legal_action(warehouse, player_pos, box_pos):
     """
     Check if an action is legal using precalculated positions.
@@ -492,10 +479,12 @@ def check_elem_action_seq(warehouse, action_seq):
     :param action_seq: a list of actions to be executed.
     """
     current_warehouse = warehouse
+    next_warehouse = sokoban.Warehouse() # initialy empty
     
     for action in action_seq:
-        # Calculate positions once
-        player_pos, box_pos = get_positions(current_warehouse, action)
+        # Calculate the next warehouse state resulting from the action
+        next_warehouse = move_warehouse(current_warehouse, action)
+        player_pos, box_pos = next_warehouse.worker, next_warehouse.boxes
         
         # Check if action is legal
         if not is_legal_action(current_warehouse, player_pos, box_pos):
