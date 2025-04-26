@@ -373,7 +373,7 @@ class SokobanPuzzle(search.Problem):
         resulting_warehouse = current_warehouse.copy(worker=new_worker_pos, boxes=new_box_positions)
         return resulting_warehouse.__str__()
 
-    def path_cost(self, c, state1: tuple[tuple[int,int],list[tuple[int,int]]], action: str, state2: tuple[tuple[int,int],list[tuple[int,int]]]):
+    def path_cost(self, c, state1: str, action: str, state2: str):
         """
         Calculate the cost of a path from state 1 to state 2 via the given action, assuming cost c.
         :param c: cost to move to state 1.
@@ -386,8 +386,13 @@ class SokobanPuzzle(search.Problem):
         move_cost = 1
 
         # Unpack the states
-        worker_pos1, box_positions1 = state1
-        worker_pos2, box_positions2 = state2
+        current_warehouse = sokoban.Warehouse()
+        current_warehouse.from_string(state1)
+        new_warehouse = sokoban.Warehouse()
+        new_warehouse.from_string(state2)
+
+        worker_pos1, box_positions1 = current_warehouse.worker, current_warehouse.boxes
+        worker_pos2, box_positions2 = new_warehouse.worker, new_warehouse.boxes
 
         # If the box positions are different, we pushed a box
         if box_positions1 != box_positions2:
@@ -395,7 +400,7 @@ class SokobanPuzzle(search.Problem):
             for i, (box1, box2) in enumerate(zip(box_positions1, box_positions2)):
                 if box1 != box2:
                     # This box was moved, add its weight to the cost
-                    move_cost += self.weights[i]
+                    move_cost += self.warehouse.weights[i]
                     break
 
         return c + move_cost
