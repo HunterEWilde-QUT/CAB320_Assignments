@@ -194,16 +194,24 @@ def check_walls(warehouse, corners: list[tuple[int,int]]) -> list[tuple[int,int]
 def find_taboo_cells(warehouse) -> list[tuple[int,int]]:
     """
     Find the (x,y) coordinates of every taboo cell in the warehouse.
+    Target cells are NEVER taboo cells, regardless of position.
     :param warehouse: warehouse text file.
     :return: a list of tuples (x,y) containing the coordinates of all taboo cells.
     """
     taboo_cells_coords = []
 
+    # Get target positions as a set for efficient lookups
+    target_positions = set(warehouse.targets)
+    
+    # Find potential taboo cells
     corners = find_corners(warehouse)
-    taboo_cells_coords.extend(corners)
-
     between_corners = check_walls(warehouse, corners)
-    taboo_cells_coords.extend(between_corners)
+    
+    # Combine all potential taboo cells
+    potential_taboo = corners + between_corners
+    
+    # Exclude target cells from taboo cells
+    taboo_cells_coords = [cell for cell in potential_taboo if cell not in target_positions]
 
     return taboo_cells_coords
 
@@ -253,52 +261,60 @@ def taboo_cells(warehouse) -> str:
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+deltas = {
+    'Left': (-1, 0),
+    'Right': (1, 0),
+    'Up': (0, -1), # Y decreases going up
+    'Down': (0, 1)  # Y increases going down
+}
+
 def move_pos(pos: tuple[int,int], direction: str) -> tuple[int,int]:
     """
-    Updates the position of a given object to move in one of four directions.
+    Updates the position of a given object to move in one of four directions
+    using the global deltas dictionary.
     :param pos: a given position (x,y).
-    :param direction: a given direction (e.g. 'Left', 'Right', 'Up', 'Down').
+    :param direction: a given direction ('Left', 'Right', 'Up', 'Down').
     :return: the new position (x,y) after moving in the given direction.
+             Returns the original position if the direction is invalid.
     """
     x, y = pos
-
-    if direction == 'Up':
-        return x, y + 1
-    if direction == 'Down':
-        return x, y - 1
-    if direction == 'Left':
-        return x - 1, y
-    if direction == 'Right':
-        return x + 1, y
-
-    return pos # by default, return the same position if the direction is invalid
+    if direction in deltas:
+        dx, dy = deltas[direction]
+        return x + dx, y + dy
+    else:
+        # Return original position if direction is not in deltas
+        return pos 
 
 def move_warehouse(current_warehouse, action):
     """
     Updates a warehouse resulting from a given movement by the worker.
     Checks if the worker has moved onto a box. If so, the box is pushed.
+    Assumes the action is valid (checked by SokobanPuzzle.actions).
+    Uses the move_pos function which relies on the global deltas.
     :param current_warehouse: a given Warehouse object.
     :param action: a movement performed by the worker.
     """
     worker_pos = current_warehouse.worker
-    box_positions = current_warehouse.boxes
+    # Make a mutable copy of the boxes list
+    box_positions = list(current_warehouse.boxes) 
 
-    # Calculate the new worker position based on action
+    # Calculate the new worker position based on action using move_pos
     new_worker_pos = move_pos(worker_pos, action)
 
-    # Create a copy of box positions to modify
-    new_box_positions = box_positions
+    # Create a reference to the mutable list copy
+    new_box_positions = box_positions 
 
     # Check if there's a box at the new worker position
     for i, box_pos in enumerate(box_positions):
         if new_worker_pos == box_pos:
+            # Calculate the new position for the pushed box using move_pos
             new_box_pos = move_pos(box_pos, action)
-            new_box_positions[i] = new_box_pos
+            # Update the position of the pushed box in the list
+            new_box_positions[i] = new_box_pos 
+            break # Assume only one box can be pushed at a time
 
-            break
-
-    # Assemble & return the new warehouse
-    resulting_warehouse = current_warehouse.copy(worker=new_worker_pos, boxes=new_box_positions)
+    # Assemble & return the new warehouse using the updated positions
+    resulting_warehouse = current_warehouse.copy(worker=new_worker_pos, boxes=new_box_positions) 
     return resulting_warehouse
 
 class SokobanPuzzle(search.Problem):
@@ -318,17 +334,18 @@ class SokobanPuzzle(search.Problem):
         (e.g. worker position, boxes' positions, weights, wall positions).
         :param warehouse: text file mapping the warehouse layout.
         """
-        self.initial = warehouse
-        # unspecified goal
-        self.tabooCells = find_taboo_cells(warehouse)  # positions of the taboo cells 'X'
-
-        # Create a Warehouse object
-        self.warehouse = sokoban.Warehouse()
-        self.warehouse.from_string(warehouse)
-
+        # Store the initial state as a string
+        self.initial = warehouse.__str__() 
+        # Keep a reference to the original warehouse object for properties like walls, targets, weights
+        self.warehouse_obj = warehouse 
+        # Ensure tabooCells and walls are stored efficiently (as sets)
+        self.tabooCells = set(find_taboo_cells(warehouse))  
+        self.walls = set(warehouse.walls) # Store walls as a set for faster lookups
+    
     def actions(self, state: str) -> list[str]:
         """
-        Gives the list of valid moves a worker can perform from a given state.
+        Gives the list of valid moves a worker can perform from a given state,
+        using the global deltas dictionary and checking taboo cells.
         :param state: a given version of the warehouse.
         :return: a list of actions which can be performed in the given state.
         """
@@ -337,24 +354,38 @@ class SokobanPuzzle(search.Problem):
         current_warehouse.from_string(state)
         worker_x, worker_y = current_warehouse.worker
 
-        # Unpack the walls from the SokobanPuzzle object
-        walls = self.warehouse.walls
+        # Use pre-calculated sets from __init__ for efficiency
+        walls_set = self.walls 
+        taboo_cells_set = self.tabooCells
+        box_positions = set(current_warehouse.boxes) 
 
-        # Calculate the positions of the cells surrounding the worker
-        up, down, left, right = ((worker_x, worker_y + 1), (worker_x, worker_y - 1),
-                                 (worker_x - 1, worker_y), (worker_x + 1, worker_y))
-        actions = []
+        possible_actions = ['Up', 'Down', 'Left', 'Right']
+        valid_actions = []
 
-        if up not in walls:
-            actions.append('Up')
-        if down not in walls:
-            actions.append('Down')
-        if left not in walls:
-            actions.append('Left')
-        if right not in walls:
-            actions.append('Right')
+        for action in possible_actions:
+            # Calculate next positions using the global deltas dictionary
+            dx, dy = deltas[action] 
+            next_worker_pos = (worker_x + dx, worker_y + dy)
 
-        return actions
+            # Case 1: Move to empty cell (not wall, not box)
+            if next_worker_pos not in walls_set and next_worker_pos not in box_positions:
+                valid_actions.append(action)
+                continue
+
+            # Case 2: Move involves pushing a box
+            if next_worker_pos in box_positions:
+                # Calculate where the box would end up using global deltas
+                next_box_pos = (next_worker_pos[0] + dx, next_worker_pos[1] + dy) 
+                
+                # Check if the box destination is valid: 
+                # Not a wall, not another box, AND NOT a taboo cell 
+                # (Assuming taboo cells are never targets; adjust if needed)
+                if next_box_pos not in walls_set and \
+                   next_box_pos not in box_positions and \
+                   next_box_pos not in taboo_cells_set: 
+                    valid_actions.append(action)
+        
+        return valid_actions
 
     def result(self, state: str, action: str) -> str:
         """
@@ -382,6 +413,7 @@ class SokobanPuzzle(search.Problem):
         :return: total cost of path to state 2.
         """
         # Default cost for moving is 1
+
         move_cost = 1
 
         # Unpack the states
@@ -390,8 +422,10 @@ class SokobanPuzzle(search.Problem):
         new_warehouse = sokoban.Warehouse()
         new_warehouse.from_string(state2)
 
-        worker_pos1, box_positions1 = current_warehouse.worker, current_warehouse.boxes
-        worker_pos2, box_positions2 = new_warehouse.worker, new_warehouse.boxes
+        # worker_pos1, box_positions1 = current_warehouse.worker, current_warehouse.boxes # Not needed?
+        box_positions1 = current_warehouse.boxes
+        # worker_pos2, box_positions2 = new_warehouse.worker, new_warehouse.boxes # Not needed?
+        box_positions2 = new_warehouse.boxes
 
         # If the box positions are different, we pushed a box
         if box_positions1 != box_positions2:
@@ -399,7 +433,8 @@ class SokobanPuzzle(search.Problem):
             for i, (box1, box2) in enumerate(zip(box_positions1, box_positions2)):
                 if box1 != box2:
                     # This box was moved, add its weight to the cost
-                    move_cost += self.warehouse.weights[i]
+                    # Use the weights from the original warehouse object
+                    move_cost += self.warehouse_obj.weights[i] 
                     break
 
         return c + move_cost
@@ -422,12 +457,34 @@ class SokobanPuzzle(search.Problem):
         for box in box_positions:
             # Find the minimum Manhattan distance to any target
             min_distance = float('inf')
-            for target in self.warehouse.targets:
+            # Use targets from the original warehouse object
+            for target in self.warehouse_obj.targets: 
                 distance = abs(box[0] - target[0]) + abs(box[1] - target[1])
                 min_distance = min(min_distance, distance)
             total_distance += min_distance
 
         return -total_distance  # Negative because we want to maximize value
+
+    def goal_test(self, state):
+        """
+        Check if the current state is a goal state.
+        A goal state is defined as a state where all boxes are on target cells.
+        :param state: current state of the warehouse (string representation).
+        :return: True if the state is a goal state, False otherwise.
+        """
+        # Unpack the state
+        current_warehouse = sokoban.Warehouse()
+        current_warehouse.from_string(state) # state is now guaranteed to be a string
+        box_positions = current_warehouse.boxes
+
+        # Check if all boxes are on target cells
+        # Use targets from the original warehouse object
+        target_set = set(self.warehouse_obj.targets) 
+        for box in box_positions:
+            if box not in target_set:
+                return False
+
+        return True
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -437,53 +494,63 @@ class SokobanPuzzle(search.Problem):
 # Defining check functions, returns True if action legal, False if action illegal
 
 # Direction deltas: (dx, dy)
-deltas = {
-    'Left': (-1, 0),
-    'Right': (1, 0),
-    'Up': (0, -1),
-    'Down': (0, 1)
-}
 
-def is_legal_action(puzzle, worker_pos: tuple[int,int], action: str):
-    """
-    Check if an action is legal using precalculated positions.
-    :param puzzle: a SokobanPuzzle object.
-    :param worker_pos: a new position of the worker.
-    :param action: the direction the worker is moving in.
-    :return: True if the action is legal, False otherwise.
-    """
-    warehouse = puzzle.warehouse
-    # Check if the worker's destination is a wall
-    if worker_pos in warehouse.walls:
+def get_positions(warehouse, action):
+    """Calculate player and potential box positions for an action using global deltas."""
+    x, y = warehouse.worker
+    # Use the global deltas dictionary directly
+    if action in deltas:
+        dx, dy = deltas[action] 
+    else: 
+        # Handle invalid action if necessary, though actions should be validated before calling this
+        return warehouse.worker, None # Or raise an error
+
+    # Player's destination
+    player_pos = (x + dx, y + dy)
+    # Potential box destination (if there's a box at player's destination)
+    box_pos = (player_pos[0] + dx, player_pos[1] + dy)
+    
+    return player_pos, box_pos
+
+def is_legal_action(warehouse, player_pos, box_pos):
+    """Check if an action is legal using precalculated positions."""
+    # Check if player destination is a wall
+    if player_pos in warehouse.walls:
         return False
     
-    # Check if the worker's destination has a box
-    if worker_pos in warehouse.boxes:
-        # Push the box to the new position
-        box_pos = move_pos(worker_pos, action)
-
-        # Check if the box's destination is valid (no walls or other boxes)
-        if box_pos in puzzle.tabooCells or box_pos in warehouse.boxes:
+    # Check if player destination has a box
+    if player_pos in warehouse.boxes:
+        # Check if box destination is valid (no walls or other boxes)
+        if box_pos in warehouse.walls or box_pos in warehouse.boxes:
             return False
-    
-    return True
+        # Box can be pushed, action is legal
+        return True
+    else:
+        # Player is moving to an empty space, action is legal
+        return True
 
-def check_elem_action_seq(puzzle, action_seq):
-    """
-    Validate and execute a sequence of actions.
-    :param puzzle: a SokobanPuzzle object representing the current state of the warehouse.
-    :param action_seq: a list of actions to be executed.
-    :return: a string representing the warehouse after executing the validated action sequence.
-    """
-    current_warehouse = puzzle.warehouse
+def update_warehouse(warehouse, action, player_pos, box_pos):
+    """Update warehouse state based on a legal action using precalculated positions."""
+
+    # If we're pushing a box
+    if player_pos in warehouse.boxes:
+        new_boxes = list(warehouse.boxes)
+        box_index = new_boxes.index(player_pos)
+        new_boxes[box_index] = box_pos
+        return warehouse.copy(worker=player_pos, boxes=new_boxes)
+    else:
+        return warehouse.copy(worker=player_pos)
+
+def check_elem_action_seq(warehouse, action_seq):
+    """Validate and execute a sequence of actions."""
+    current_warehouse = warehouse
     
     for action in action_seq:
-        # Calculate the next warehouse state resulting from the action
-        next_warehouse = move_warehouse(current_warehouse, action)
-        worker_pos = next_warehouse.worker
+        # Calculate positions once
+        player_pos, box_pos = get_positions(current_warehouse, action)
         
         # Check if action is legal
-        if not is_legal_action(current_warehouse, worker_pos, action):
+        if not is_legal_action(current_warehouse, player_pos, box_pos):
             return "Impossible"
             
         # Update warehouse
@@ -497,14 +564,15 @@ def run_tests(path):
     print(warehouse.__str__())
     
     # Testing legal actions
-    print(f"Legal action 'Right': {is_legal_action(warehouse, 'Right')}")
-    print(f"Legal action 'Up': {is_legal_action(warehouse, 'Up')}")
+    print(f"Legal action 'R': {is_legal_action(warehouse, 'Right')}")
+    print(f"Legal action 'U': {is_legal_action(warehouse, 'Up')}")
     
     # Testing action sequence
     print(check_elem_action_seq(warehouse, ["Down","Right","Left"]))
 
 # Uncomment to run tests
-# run_tests("./Assigment1/warehouses/warehouse_006n.txt")
+#run_tests("./warehouses/warehouse_6n.txt")
+
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -531,28 +599,34 @@ def solve_weighted_sokoban(warehouse):
     problem = SokobanPuzzle(warehouse)
 
     # Check if the puzzle is already in a goal state
-    if problem.goal_test(problem.initial):
+    if problem.goal_test(problem.initial.__str__()):
         return [], 0
 
     # Define a heuristic function for A* search
     def h(node):
-        # Manhattan distance from each box to its nearest target
+        # Simple admissible heuristic: Sum of Manhattan distances from each box to its nearest target.
+        # This ignores weights, ensuring admissibility as weights >= 0.
         total_distance = 0
         # Unpack the state
-        _, box_positions = node.state
+        current_warehouse = sokoban.Warehouse()
+        current_warehouse.from_string(node.state) 
+        box_positions = current_warehouse.boxes
+        targets = problem.warehouse_obj.targets # Use targets from the problem instance
 
-        # Find the minimum weight of the boxes
-        min_weight = 1
-
-        # Calculate the Manhattan distance from each box to its nearest target
+        if not targets: # Handle case with no targets
+             return 0
+        
+        # Calculate the sum of minimum Manhattan distances for each box to any target
         for box in box_positions:
-            # Find the minimum Manhattan distance to any target
-            min_distance = float('inf')
-            for target in problem.goals:
+            min_distance_for_box = float('inf')
+            for target in targets: 
                 distance = abs(box[0] - target[0]) + abs(box[1] - target[1])
-                min_distance = min(min_distance, distance)
-            # Multiply by the minimum weight to ensure the heuristic is admissible
-            total_distance += min_distance * min_weight
+                min_distance_for_box = min(min_distance_for_box, distance)
+            
+            # If a box cannot reach any target (e.g., targets list is empty, though checked above), 
+            # handle appropriately. Here we add 0 if min_distance remains inf.
+            if min_distance_for_box != float('inf'):
+                 total_distance += min_distance_for_box
 
         return total_distance
 
@@ -572,3 +646,6 @@ def solve_weighted_sokoban(warehouse):
     return action_sequence, total_cost
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+wh = intialise_warehouse("./Assigment1/warehouses/warehouse_008a.txt")
+print(check_elem_action_seq(wh, ['Left', 'Left', 'Up', 'Up', 'Left', 'Down', 'Right', 'Right', 'Right', 'Right', 'Up', 'Right', 'Down', 'Left', 'Down', 'Right', 'Right', 'Right', 'Left', 'Left', 'Left', 'Left', 'Left', 'Left', 'Left']))
