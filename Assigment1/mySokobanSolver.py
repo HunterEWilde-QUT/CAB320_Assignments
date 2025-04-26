@@ -253,11 +253,11 @@ def taboo_cells(warehouse) -> str:
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-def move(pos: tuple[int,int], direction: str) -> tuple[int,int]:
+def move(pos: tuple[int,int], direction: str):
     """
     Updates the position of a given object to move in one of four directions.
     :param pos: a given position (x,y).
-    :param direction: a given direction.
+    :param direction: a given direction (e.g. 'Left', 'Right', 'Up', 'Down').
     :return: the new position (x,y) after moving in the given direction.
     """
     x, y = pos
@@ -325,11 +325,11 @@ class SokobanPuzzle(search.Problem):
 
         return actions
 
-    def result(self, state, action: str) -> tuple[tuple[int,int],list[tuple[int,int]]]:
+    def result(self, state: str, action: str) -> str:
         """
         Applies the given action to the given state and returns the resulting state.
-        :param state: a given state, representing the current position of the worker & boxes.
-        :param action: action to be applied.
+        :param state: a given state of the warehouse.
+        :param action: a movement performed by the worker.
             E.g. 'Left', 'Down', 'Right', 'Up'.
         :return: state resulting from applying the action to the given state.
         """
@@ -338,8 +338,11 @@ class SokobanPuzzle(search.Problem):
             return state
 
         # Unpack the state
-        worker_pos = state[0]  # worker's current position (x, y)
-        box_positions = state[1]  # list of boxes' positions [(x, y), ...]
+        current_warehouse = sokoban.Warehouse()
+        current_warehouse.from_string(state)
+
+        worker_pos = current_warehouse.worker
+        box_positions = current_warehouse.boxes
 
         # Calculate the new worker position based on action
         new_worker_pos = move(worker_pos, action)
@@ -350,15 +353,12 @@ class SokobanPuzzle(search.Problem):
         # Check if there's a box at the new worker position
         for i, box_pos in enumerate(box_positions):
             if new_worker_pos == box_pos:
-                # Move the box in the direction of the action
                 new_box_pos = move(box_pos, action)
 
                 # Check if the box can move to the new position
                 if new_box_pos not in self.tabooCells and new_box_pos not in box_positions:
-                    # Update box position
                     new_box_positions[i] = new_box_pos
-                    self.boxes[self.boxes.index(box_pos)] = new_box_pos
-
+                    """
                     # Check if the box's new position is a goal
                     for j in range(len(self.goals)):
                         goal_pos = self.goals[j][0], self.goals[j][1]
@@ -366,11 +366,12 @@ class SokobanPuzzle(search.Problem):
                             self.goals[j][2] = True # this goal is now occupied
 
                             break
-
+                    """
                 break
 
-        # Return the new state
-        return new_worker_pos, new_box_positions
+        # Assemble & return the new state
+        resulting_warehouse = current_warehouse.copy(worker=new_worker_pos, boxes=new_box_positions)
+        return resulting_warehouse.__str__()
 
     def path_cost(self, c, state1: tuple[tuple[int,int],list[tuple[int,int]]], action: str, state2: tuple[tuple[int,int],list[tuple[int,int]]]):
         """
@@ -449,7 +450,10 @@ def get_positions(warehouse, action):
     return player_pos, box_pos
 
 def is_legal_action(warehouse, player_pos, box_pos):
-    """Check if an action is legal using precalculated positions."""
+    """
+    Check if an action is legal using precalculated positions.
+    :param warehouse: a Warehouse object.
+    """
     # Check if player destination is a wall
     if player_pos in warehouse.walls:
         return False
