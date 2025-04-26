@@ -460,28 +460,14 @@ def is_legal_action(warehouse, worker_pos, box_pos):
     
     return True
 
-def update_warehouse(warehouse, action, worker_pos, box_pos):
-    """
-    Update warehouse state based on a legal action using precalculated positions.
-    """
-
-    # If we're pushing a box
-    if worker_pos in warehouse.boxes:
-        new_boxes = list(warehouse.boxes)
-        box_index = new_boxes.index(worker_pos)
-        new_boxes[box_index] = box_pos
-        return warehouse.copy(worker=worker_pos, boxes=new_boxes)
-    else:
-        return warehouse.copy(worker=worker_pos)
-
 def check_elem_action_seq(warehouse, action_seq):
     """
     Validate and execute a sequence of actions.
     :param warehouse: a Warehouse object representing the current state of the warehouse.
     :param action_seq: a list of actions to be executed.
+    :return: a string representing the warehouse after executing the validated action sequence.
     """
     current_warehouse = warehouse
-    next_warehouse = sokoban.Warehouse() # initialy empty
     
     for action in action_seq:
         # Calculate the next warehouse state resulting from the action
@@ -491,9 +477,9 @@ def check_elem_action_seq(warehouse, action_seq):
         # Check if action is legal
         if not is_legal_action(current_warehouse, worker_pos, box_pos):
             return "Impossible"
-            
-        # Update warehouse
-        current_warehouse = update_warehouse(current_warehouse, action, worker_pos, box_pos)
+
+        # Update the warehouse
+        current_warehouse = next_warehouse
     
     return current_warehouse.__str__()
 
