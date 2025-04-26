@@ -405,15 +405,17 @@ class SokobanPuzzle(search.Problem):
 
         return c + move_cost
 
-    def value(self, state2: tuple[tuple[int,int],list[tuple[int,int]]]):
+    def value(self, state: str):
         """
         Compute the value of the given state.
         Used for optimization problems.
-        :param state2: current state, representing the current position of the worker & boxes.
+        :param state: current state.
         :return: value of the given state.
         """
         # Unpack the state
-        box_positions = state2[1]
+        current_warehouse = sokoban.Warehouse()
+        current_warehouse.from_string(state)
+        box_positions = current_warehouse.boxes
 
         # For Sokoban, we can use the negative of the Manhattan distance
         # from boxes to their nearest targets as a value function
@@ -421,7 +423,7 @@ class SokobanPuzzle(search.Problem):
         for box in box_positions:
             # Find the minimum Manhattan distance to any target
             min_distance = float('inf')
-            for target in self.goals:
+            for target in self.warehouse.targets:
                 distance = abs(box[0] - target[0]) + abs(box[1] - target[1])
                 min_distance = min(min_distance, distance)
             total_distance += min_distance
