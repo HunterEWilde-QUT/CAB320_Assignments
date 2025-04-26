@@ -1,12 +1,15 @@
 import os
 import glob
-import sanity_check as sc
 import sokoban
 # importing functions individually for sanity_check
 from mySokobanSolver import taboo_cells, solve_weighted_sokoban, check_elem_action_seq 
-import io
-from contextlib import redirect_stdout
 import re
+import random
+import time
+import multiprocessing
+from functools import partial
+from tqdm import tqdm 
+
 
 """ 
     File for testing solve_weighted_sokoban and finding areas to optimise.
@@ -25,8 +28,6 @@ import re
     2. Compare results with the previous batch of warehouses.
 
 """
-
-## ADD OPTION TO TEST IN BATCHES OR ALL WAREHOUSES
 
 def create_report(start_warehouse, end_warehouse):
     """ Create a report file for the batch of warehouses. Returns path to report."""
@@ -63,67 +64,6 @@ def edit_report(path, line, header=False):
 
 # create_report(1, 50) - Tested create_report function and it works as expected.
 # edit_report('testing/Test1.txt', 'Test line 1')  - Tested edit_report function and it works as expected.
-
-def ask_to_continue():
-    """ Asks the user if they want to continue after a failure. """
-    while True:
-        choice = input("A sanity check failed. Do you want to continue anyway? (Y/N): ").strip().upper()
-        if choice == 'Y':
-            print("Continuing despite failed sanity check...")
-            return True
-        elif choice == 'N':
-            print("Aborting due to failed sanity check.")
-            return False
-        else:
-            print("Invalid input. Please enter Y or N.")
-
-def test_sanity():
-    """ Run the sanity check and abort if it fails. """
-    all_passed = True
-
-    try:
-        # Test taboo cells
-        f = io.StringIO()
-        with redirect_stdout(f):
-            sc.test_taboo_cells()
-        output = f.getvalue()
-        if "passed" not in output.lower():
-            print(f"Sanity check for taboo cells failed. Output:\n{output}")
-            all_passed = False
-
-        # Test action sequence
-        f = io.StringIO()
-        with redirect_stdout(f):
-            sc.test_check_elem_action_seq()
-        output = f.getvalue()
-        if "passed" not in output.lower():
-            print(f"Sanity check for action sequence failed. Output:\n{output}")
-            all_passed = False
-
-        # Test weighted sokoban solver
-        f = io.StringIO()
-        with redirect_stdout(f):
-            sc.test_solve_weighted_sokoban()
-        output = f.getvalue()
-        # Check for the whole word "expected"
-        if " expected " not in output.lower().split():
-            print(f"Sanity check for weighted sokoban failed. Output:\n{output}")
-            all_passed = False
-
-        if all_passed:
-            print("\nAll sanity checks passed!")
-        else:
-            ask_to_continue()
-
-    except Exception as e:
-        print(f"Sanity check failed with an exception: {e}")
-        exit(1)
-
-# test_sanity() Fails for now as solve_weghted_sokoban is not implemented yet. Will retest after implementation.
-
-def test_warehouse():
-
-    raise NotImplementedError()
 
 def classify_warehouse(wh, report_path):
 
@@ -165,17 +105,15 @@ def test_warehouse(file_path, report_path):
     wh = load_warehouse(file_path, report_path)
     classify_warehouse(wh, report_path)
 
-    # Test the solver
-
-    solution = "solved"     # Placeholder: expects solved, not solved, or impossible.
+    solution = "Solved"     # Placeholder: expects solved, not solved, or impossible.
     time = 30               # Placeholder: time taken to solve the warehouse.
-    cost = 100              # Placeholder: cost of the solution.
+    cost = 20               # Placeholder: cost of the solution.
 
-    edit_report(report_path, f"Result: Solved? = {solution}, Time: {time:.2f} seconds, Cost: {cost}")
+    fake_test()  # Placeholder for the actual test function.
 
-    # Write time to solve and cost to the report file, then create a new line to seperate.
-
-    return
+    # Reassign the solution, time, and cost variables with actual values.
+    return solution, time, cost
+    
 
 def test_batch(start_warehouse, num_warehouses):
     """ Test a batch of warehouses. """
@@ -189,13 +127,51 @@ def test_batch(start_warehouse, num_warehouses):
     # Select the batch of warehouses to test
     batch_files = wh_files[start_index:start_index + num_warehouses]
 
-    for file_path in batch_files:
-        full_file_path = os.path.join("./Assigment1/warehouses", file_path) # Construct full path
-        test_warehouse(full_file_path, report_path)
+    # Display progress bar for the batch
+    for file_path in tqdm(batch_files, desc="Testing warehouses", unit="warehouse"):
+        full_file_path = os.path.join("./Assigment1/warehouses", file_path)  # Construct full path
+        func = partial(test_warehouse, full_file_path, report_path)
+        result = run_with_timeout(func, 10)  # 10 seconds timeout
+        if result is None:  # Timeout occurred
+            solution, time, cost = "Not Solved", "Timeout", "N/A"
+        else:
+            solution, time, cost = result
+        edit_report(report_path, f"Result: Solved? = {solution}, Time: {time:.2f} seconds, Cost: {cost}")
 
     return print(f"Batch test completed. Report saved to {report_path}.")
 
+## Timeout & Other Testing Functions
 
-test_batch("warehouse_001.txt", 20) # Seems to work as expected, should retest after updating mySokobanSolver.py fro github.
+def fake_test():
+    """ Fake test function to simulate the testing process. """
+    # Simulate some testing process
+    wait_time = random.randint(1, 30)
+    time.sleep(wait_time)
+    
+def _worker(func, queue):
+    try:
+        result = func()
+        queue.put(result)
+    except Exception as e:
+        queue.put(e)
 
-# WRITE A FUNCTION TO COMBINE TESTING AND CONTROL THROUGH COMMAND LINE.
+def run_with_timeout(func, timeout=10):
+    queue = multiprocessing.Queue()
+    process = multiprocessing.Process(target=_worker, args=(func, queue))
+    process.start()
+    process.join(timeout)
+
+    if process.is_alive():
+        process.terminate()
+        return None
+
+    result = queue.get()
+    if isinstance(result, Exception):
+        raise result
+    return result
+        
+
+# Test Solve_Weighted_Sokoban
+
+if __name__ == '__main__':
+    test_batch("warehouse_001.txt", 20) # Seems to work as expected, should retest after updating mySokobanSolver.py from github.

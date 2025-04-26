@@ -421,7 +421,7 @@ def is_legal_action(warehouse, player_pos, box_pos):
     
     return True
 
-def update_warehouse(warehouse, action, player_pos, box_pos):
+def update_warehouse(warehouse, player_pos, box_pos):
     """Update warehouse state based on a legal action using precalculated positions."""
 
     # If we're pushing a box
@@ -446,7 +446,7 @@ def check_elem_action_seq(warehouse, action_seq):
             return "Impossible"
             
         # Update warehouse
-        current_warehouse = update_warehouse(current_warehouse, action, player_pos, box_pos)
+        current_warehouse = update_warehouse(current_warehouse, player_pos, box_pos)
     
     return current_warehouse.__str__()
 
@@ -456,11 +456,11 @@ def run_tests(path):
     print(warehouse.__str__())
     
     # Testing legal actions
-    print(f"Legal action 'R': {is_legal_action(warehouse, 'R')}")
-    print(f"Legal action 'U': {is_legal_action(warehouse, 'U')}")
+    print(f"Legal action 'Right': {is_legal_action(warehouse, 'Right')}")
+    print(f"Legal action 'Up': {is_legal_action(warehouse, 'Up')}")
     
     # Testing action sequence
-    print(check_elem_action_seq(warehouse, ["D","R","L"]))
+    print(check_elem_action_seq(warehouse, ["Down","Right","Left"]))
 
 # Uncomment to run tests
 # run_tests("./Assigment1/warehouses/warehouse_006n.txt")
