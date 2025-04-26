@@ -317,6 +317,30 @@ def move_warehouse(current_warehouse, action):
     resulting_warehouse = current_warehouse.copy(worker=new_worker_pos, boxes=new_box_positions) 
     return resulting_warehouse
 
+def add_weights_to_string(warehouse_obj, warehouse_string):
+    """
+    Add the weights to the warehouse string in the correct order.
+    The boxes in the warehouse are ordered by y-coordinate first, then x-coordinate.
+    """
+    # Get the boxes in the NEW warehouse
+    boxes = warehouse_obj.boxes
+    
+    # Create a mapping from current box positions to weights
+    weights = warehouse_obj.weights
+    box_weight_map = dict(zip(warehouse_obj.boxes, warehouse_obj.weights))
+    
+    # Sort boxes in reading order (y, x)
+    sorted_boxes = sorted(boxes, key=lambda pos: (pos[1], pos[0]))
+    
+    # Get weights in the correct order based on the sorted boxes
+    reordered_weights = [box_weight_map[box] for box in sorted_boxes]
+    
+    # Convert weights list to a space-separated string
+    weights_str = " ".join(str(w) for w in reordered_weights)
+
+    # Return the weights string followed by the warehouse string
+    return weights_str + "\n" + warehouse_string
+
 class SokobanPuzzle(search.Problem):
     """
     An instance of the class 'SokobanPuzzle' represents a Sokoban puzzle.
@@ -335,7 +359,13 @@ class SokobanPuzzle(search.Problem):
         :param warehouse: text file mapping the warehouse layout.
         """
         # Store the initial state as a string
-        self.initial = warehouse.__str__() 
+        warehouse_string = warehouse.__str__()
+        # Store the initial state as a string with weights information added at the front
+        warehouse_string = warehouse.__str__()
+        # Convert weights list to a space-separated string
+        weights_str = " ".join(str(w) for w in warehouse.weights)
+        # Intial state looks like a txt document -> states are unpacked using the from_lines method
+        self.initial = weights_str + "\n" + warehouse_string
         # Keep a reference to the original warehouse object for properties like walls, targets, weights
         self.warehouse_obj = warehouse 
         # Ensure tabooCells and walls are stored efficiently (as sets)
@@ -351,7 +381,7 @@ class SokobanPuzzle(search.Problem):
         """
         # Unpack the worker's position from the current state
         current_warehouse = sokoban.Warehouse()
-        current_warehouse.from_string(state)
+        current_warehouse.from_lines(state.splitlines())
         worker_x, worker_y = current_warehouse.worker
 
         # Use pre-calculated sets from __init__ for efficiency
@@ -400,8 +430,11 @@ class SokobanPuzzle(search.Problem):
             return state
         else:
             warehouse = sokoban.Warehouse()
-            warehouse.from_string(state)
-            return move_warehouse(warehouse, action).__str__()
+            warehouse.from_lines(state.splitlines())
+            new_warehouse = move_warehouse(warehouse, action) 
+            new_warehouse_string = new_warehouse.__str__()
+            result_state = add_weights_to_string(new_warehouse, new_warehouse_string)
+            return result_state
 
     def path_cost(self, c, state1: str, action: str, state2: str):
         """
@@ -418,9 +451,9 @@ class SokobanPuzzle(search.Problem):
 
         # Unpack the states
         current_warehouse = sokoban.Warehouse()
-        current_warehouse.from_string(state1)
+        current_warehouse.from_lines(state1.splitlines())
         new_warehouse = sokoban.Warehouse()
-        new_warehouse.from_string(state2)
+        new_warehouse.from_lines(state2.splitlines())
 
         # worker_pos1, box_positions1 = current_warehouse.worker, current_warehouse.boxes # Not needed?
         box_positions1 = current_warehouse.boxes
@@ -434,7 +467,7 @@ class SokobanPuzzle(search.Problem):
                 if box1 != box2:
                     # This box was moved, add its weight to the cost
                     # Use the weights from the original warehouse object
-                    move_cost += self.warehouse_obj.weights[i] 
+                    move_cost += current_warehouse.weights[i] 
                     break
 
         return c + move_cost
@@ -448,7 +481,7 @@ class SokobanPuzzle(search.Problem):
         """
         # Unpack the state
         current_warehouse = sokoban.Warehouse()
-        current_warehouse.from_string(state)
+        current_warehouse.from_lines(state.splitlines())
         box_positions = current_warehouse.boxes
 
         # For Sokoban, we can use the negative of the Manhattan distance
@@ -474,7 +507,7 @@ class SokobanPuzzle(search.Problem):
         """
         # Unpack the state
         current_warehouse = sokoban.Warehouse()
-        current_warehouse.from_string(state) # state is now guaranteed to be a string
+        current_warehouse.from_lines(state.splitlines())
         box_positions = current_warehouse.boxes
 
         # Check if all boxes are on target cells
@@ -599,7 +632,7 @@ def solve_weighted_sokoban(warehouse):
     problem = SokobanPuzzle(warehouse)
 
     # Check if the puzzle is already in a goal state
-    if problem.goal_test(problem.initial.__str__()):
+    if problem.goal_test(problem.initial):
         return [], 0
 
     # Define a heuristic function for A* search
@@ -609,7 +642,7 @@ def solve_weighted_sokoban(warehouse):
         total_distance = 0
         # Unpack the state
         current_warehouse = sokoban.Warehouse()
-        current_warehouse.from_string(node.state) 
+        current_warehouse.from_lines(node.state.splitlines()) 
         box_positions = current_warehouse.boxes
         targets = problem.warehouse_obj.targets # Use targets from the problem instance
 
@@ -648,4 +681,8 @@ def solve_weighted_sokoban(warehouse):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 wh = intialise_warehouse("./Assigment1/warehouses/warehouse_008a.txt")
-print(check_elem_action_seq(wh, ['Left', 'Left', 'Up', 'Up', 'Left', 'Down', 'Right', 'Right', 'Right', 'Right', 'Up', 'Right', 'Down', 'Left', 'Down', 'Right', 'Right', 'Right', 'Left', 'Left', 'Left', 'Left', 'Left', 'Left', 'Left']))
+# print(check_elem_action_seq(wh, ['Left', 'Left', 'Up', 'Up', 'Left', 'Down', 'Right', 'Right', 'Right', 'Right', 'Up', 'Right', 'Down', 'Left', 'Down', 'Right', 'Right', 'Right', 'Left', 'Left', 'Left', 'Left', 'Left', 'Left', 'Left']))
+
+ware = sokoban.Warehouse()
+ware.from_lines(['1 99', '   ######    ', '###      ### ', '#  $ $      #', '# .   @    .#', '############ '])
+print(ware.__str__())
