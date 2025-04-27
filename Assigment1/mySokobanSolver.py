@@ -659,7 +659,7 @@ def solve_weighted_sokoban(warehouse):
             # If a box cannot reach any target (e.g., targets list is empty, though checked above), 
             # handle appropriately. Here we add 0 if min_distance remains inf.
             if min_distance_for_box != float('inf'):
-                 total_distance += min_distance_for_box
+                total_distance += min_distance_for_box
 
         return total_distance
 
@@ -686,3 +686,8 @@ wh = intialise_warehouse("./Assigment1/warehouses/warehouse_008a.txt")
 ware = sokoban.Warehouse()
 ware.from_lines(['1 99', '   ######    ', '###      ### ', '#  $ $      #', '# .   @    .#', '############ '])
 print(ware.__str__())
+
+house = sokoban.Warehouse()
+house.load_warehouse("./Assigment1/warehouses\warehouse_097.txt")
+
+print(solve_weighted_sokoban(house))
