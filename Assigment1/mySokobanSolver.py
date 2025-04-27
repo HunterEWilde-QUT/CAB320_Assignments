@@ -350,13 +350,13 @@ class SokobanPuzzle(search.Problem):
     Your implementation should be fully compatible with the search functions of
     the provided module 'search.py'.
     """
-    def __init__(self, warehouse):
+    def __init__(self, warehouse: sokoban.Warehouse):
         """
         Reads a warehouse text file and creates a SokobanPuzzle instance,
         which captures the initial state of the warehouse
         & other information about the warehouse stored as a Warehouse object
         (e.g. worker position, boxes' positions, weights, wall positions).
-        :param warehouse: text file mapping the warehouse layout.
+        :param warehouse: a Warehouse object representing the initial state of the warehouse.
         """
         # Store the initial state as a string
         warehouse_string = warehouse.__str__()
