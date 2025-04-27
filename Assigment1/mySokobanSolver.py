@@ -384,35 +384,34 @@ class SokobanPuzzle(search.Problem):
         current_warehouse.from_lines(state.splitlines())
         worker_x, worker_y = current_warehouse.worker
 
-        # Use pre-calculated sets from __init__ for efficiency
-        walls_set = self.walls 
+        # Use object fields for efficiency
+        walls_set = self.walls
         taboo_cells_set = self.tabooCells
-        box_positions = set(current_warehouse.boxes) 
+        box_positions = set(current_warehouse.boxes)
 
         possible_actions = ['Up', 'Down', 'Left', 'Right']
         valid_actions = []
 
         for action in possible_actions:
             # Calculate next positions using the global deltas dictionary
-            dx, dy = deltas[action] 
+            dx, dy = deltas[action]
             next_worker_pos = (worker_x + dx, worker_y + dy)
 
-            # Case 1: Move to empty cell (not wall, not box)
+            # Case 1: Move to an empty cell (not a wall, not a box)
             if next_worker_pos not in walls_set and next_worker_pos not in box_positions:
                 valid_actions.append(action)
                 continue
 
-            # Case 2: Move involves pushing a box
+            # Case 2: Move into a box, pushing it
             if next_worker_pos in box_positions:
                 # Calculate where the box would end up using global deltas
-                next_box_pos = (next_worker_pos[0] + dx, next_worker_pos[1] + dy) 
+                next_box_pos = (next_worker_pos[0] + dx, next_worker_pos[1] + dy)
                 
-                # Check if the box destination is valid: 
-                # Not a wall, not another box, AND NOT a taboo cell 
+                # Check if the box's destination is valid:
+                # Neither a taboo cell nor another box.
                 # (Assuming taboo cells are never targets; adjust if needed)
-                if next_box_pos not in walls_set and \
-                   next_box_pos not in box_positions and \
-                   next_box_pos not in taboo_cells_set: 
+                if next_box_pos not in taboo_cells_set and \
+                   next_box_pos not in box_positions:
                     valid_actions.append(action)
         
         return valid_actions
