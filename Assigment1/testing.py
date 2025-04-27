@@ -115,7 +115,7 @@ def test_warehouse(file_path, report_path):
         time_taken = time.time() - start_time
         
 
-        if result == "Impossible":
+        if result == ("Impossible", None):
             solution = "Impossible"
         else:
             action, cost = result
@@ -185,4 +185,4 @@ def run_with_timeout(func, timeout=10):
 # Test Solve_Weighted_Sokoban
 
 if __name__ == '__main__':
-    test_batch("warehouse_001.txt", 108) # Seems to work as expected, should retest after updating mySokobanSolver.py from github.
+    test_batch("warehouse_001_a.txt", 108) # Seems to work as expected, should retest after updating mySokobanSolver.py from github.

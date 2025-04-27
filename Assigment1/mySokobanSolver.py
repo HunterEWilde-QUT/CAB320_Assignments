@@ -30,6 +30,8 @@ Last modified by 2021-08-17  by f.maire@qut.edu.au
 import search 
 import sokoban
 import re
+import numpy as np
+from scipy.optimize import linear_sum_assignment
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -111,12 +113,23 @@ def find_corners(warehouse):
 
     # Iterate over blank positions and check if they are corners
     for x, y in blank_pos:
-        # Check if both vertical and horizontal directions have walls
-        has_wall_x = (x - 1, y) in wall_pos or (x + 1, y) in wall_pos  # left or right
-        has_wall_y = (x, y - 1) in wall_pos or (x, y + 1) in wall_pos  # up or down
-
-        if has_wall_x and has_wall_y:
-            corners.append((x, y))
+        # Check for corners by looking at adjacent walls
+        adjacent_walls = []
+        for dx, dy in directions:
+            if (x + dx, y + dy) in wall_pos:
+                adjacent_walls.append((dx, dy))
+        
+        # A true corner has walls in two adjacent directions
+        if len(adjacent_walls) >= 2:
+            for i in range(len(adjacent_walls)):
+                for j in range(i+1, len(adjacent_walls)):
+                    # Check if these directions are adjacent (not opposite)
+                    if adjacent_walls[i][0] + adjacent_walls[j][0] != 0 or adjacent_walls[i][1] + adjacent_walls[j][1] != 0:
+                        corners.append((x, y))
+                        break
+                else:
+                    continue
+                break
 
     return corners
 
@@ -165,31 +178,50 @@ def check_walls(warehouse, corners: list[tuple[int,int]]) -> list[tuple[int,int]
     :return:
     """
     corner_pairs = find_corner_pairs(warehouse, corners)
-
-    along_wall = []  # list to store taboo cells (tuple[x,y]) along a wall between two corners with no target cells on the wall
+    
+    # Use a set to prevent duplicates
+    along_wall_set = set()  # use a set instead of a list to avoid duplicates
     walls = warehouse.walls
 
     for corner_pair in corner_pairs:
         # Unpack corner pair and direction
         direction, (x1, y1), (x2, y2) = corner_pair
+        temp_wall1 = []    # list to store potentially taboo cells
+        temp_wall2 = []    # list to store potentially taboo cells
 
         if direction == 'H':
-            for x in range(x1 + 1, x2):
+            distance = abs(x2 - x1) - 1  # distance between two corners
+            for x in range(min(x1, x2) + 1, max(x1, x2)):
                 # Check for walls above and below
-                above = (x, y1 - 1) in walls
-                below = (x, y1 + 1) in walls
-                if above or below:
-                    along_wall.append((x, y1))
+                if (x, y1 - 1) in walls:
+                    temp_wall1.append((x, y1))
+                if (x, y1 + 1) in walls:
+                    temp_wall2.append((x, y1))
+            
+            # Only add cells if ALL positions between corners have walls above/below
+            if len(temp_wall1) == distance:
+                along_wall_set.update(temp_wall1)  # use update for sets
+            if len(temp_wall2) == distance:
+                along_wall_set.update(temp_wall2)  # use update for sets
+                
         elif direction == 'V':
             y_start, y_end = sorted([y1, y2])
+            distance = y_end - y_start - 1  # distance between two corners
             for y in range(y_start + 1, y_end):
                 # Check for walls to the left and right
-                left = (x1 - 1, y) in walls
-                right = (x1 + 1, y) in walls
-                if left or right:
-                    along_wall.append((x1, y))
+                if (x1 - 1, y) in walls:
+                    temp_wall1.append((x1, y))
+                if (x1 + 1, y) in walls:
+                    temp_wall2.append((x1, y))
+                    
+            # Only add cells if ALL positions between corners have walls left/right
+            if len(temp_wall1) == distance:
+                along_wall_set.update(temp_wall1)  # use update for sets
+            if len(temp_wall2) == distance:
+                along_wall_set.update(temp_wall2)  # use update for sets
 
-    return along_wall
+    # Convert the set back to a list before returning
+    return list(along_wall_set)
 
 def find_taboo_cells(warehouse) -> list[tuple[int,int]]:
     """
@@ -410,8 +442,9 @@ class SokobanPuzzle(search.Problem):
                 # Check if the box's destination is valid:
                 # Neither a taboo cell nor another box.
                 # (Assuming taboo cells are never targets; adjust if needed)
-                if next_box_pos not in taboo_cells_set and \
-                   next_box_pos not in box_positions:
+                if next_box_pos not in walls_set and \
+                   next_box_pos not in box_positions and \
+                   next_box_pos not in taboo_cells_set:
                     valid_actions.append(action)
         
         return valid_actions
@@ -629,29 +662,33 @@ def solve_weighted_sokoban(warehouse):
     if problem.goal_test(problem.initial):
         return [], 0
 
-    # Define a heuristic function for A* search
+    # Define an adaptive heuristic function for A* search
     def h(node):
+ 
         # Simple admissible heuristic: Sum of Manhattan distances from each box to its nearest target.
         # This ignores weights, ensuring admissibility as weights >= 0.
         total_distance = 0
+ 
         # Unpack the state
         current_warehouse = sokoban.Warehouse()
         current_warehouse.from_lines(node.state.splitlines()) 
         box_positions = current_warehouse.boxes
         targets = problem.warehouse_obj.targets # Use targets from the problem instance
-
+ 
         if not targets: # Handle case with no targets
-             return 0
+            return 0
         
         # Calculate the sum of minimum Manhattan distances for each box to any target
+ 
         for box in box_positions:
             min_distance_for_box = float('inf')
             for target in targets: 
                 distance = abs(box[0] - target[0]) + abs(box[1] - target[1])
                 min_distance_for_box = min(min_distance_for_box, distance)
-            
+
             # If a box cannot reach any target (e.g., targets list is empty, though checked above), 
             # handle appropriately. Here we add 0 if min_distance remains inf.
+ 
             if min_distance_for_box != float('inf'):
                 total_distance += min_distance_for_box
 
@@ -672,16 +709,6 @@ def solve_weighted_sokoban(warehouse):
 
     return action_sequence, total_cost
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-wh = intialise_warehouse("./Assigment1/warehouses/warehouse_008a.txt")
-# print(check_elem_action_seq(wh, ['Left', 'Left', 'Up', 'Up', 'Left', 'Down', 'Right', 'Right', 'Right', 'Right', 'Up', 'Right', 'Down', 'Left', 'Down', 'Right', 'Right', 'Right', 'Left', 'Left', 'Left', 'Left', 'Left', 'Left', 'Left']))
-
-ware = sokoban.Warehouse()
-ware.from_lines(['1 99', '   ######    ', '###      ### ', '#  $ $      #', '# .   @    .#', '############ '])
-print(ware.__str__())
-
-house = sokoban.Warehouse()
-house.load_warehouse("./Assigment1/warehouses\warehouse_097.txt")
-
-print(solve_weighted_sokoban(house))
+warehouse = intialise_warehouse("./Assigment1/warehouses/warehouse_003.txt")
+print(solve_weighted_sokoban(warehouse))
+# print(taboo_cells(warehouse))
