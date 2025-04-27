@@ -528,23 +528,6 @@ class SokobanPuzzle(search.Problem):
 
 # Direction deltas: (dx, dy)
 
-def get_positions(warehouse, action):
-    """Calculate player and potential box positions for an action using global deltas."""
-    x, y = warehouse.worker
-    # Use the global deltas dictionary directly
-    if action in deltas:
-        dx, dy = deltas[action] 
-    else: 
-        # Handle invalid action if necessary, though actions should be validated before calling this
-        return warehouse.worker, None # Or raise an error
-
-    # Player's destination
-    player_pos = (x + dx, y + dy)
-    # Potential box destination (if there's a box at player's destination)
-    box_pos = (player_pos[0] + dx, player_pos[1] + dy)
-    
-    return player_pos, box_pos
-
 def is_legal_action(warehouse, player_pos, box_pos):
     """Check if an action is legal using precalculated positions."""
     # Check if player destination is a wall
@@ -562,32 +545,26 @@ def is_legal_action(warehouse, player_pos, box_pos):
         # Player is moving to an empty space, action is legal
         return True
 
-def update_warehouse(warehouse, action, player_pos, box_pos):
-    """Update warehouse state based on a legal action using precalculated positions."""
-
-    # If we're pushing a box
-    if player_pos in warehouse.boxes:
-        new_boxes = list(warehouse.boxes)
-        box_index = new_boxes.index(player_pos)
-        new_boxes[box_index] = box_pos
-        return warehouse.copy(worker=player_pos, boxes=new_boxes)
-    else:
-        return warehouse.copy(worker=player_pos)
-
-def check_elem_action_seq(warehouse, action_seq):
-    """Validate and execute a sequence of actions."""
+def check_elem_action_seq(warehouse, action_seq) -> str:
+    """
+    Validate and execute a sequence of actions.
+    :param warehouse: a Warehouse object.
+    :param action_seq: a list of actions.
+    :return: a string representation of the updated warehouse.
+    """
     current_warehouse = warehouse
     
     for action in action_seq:
-        # Calculate positions once
-        player_pos, box_pos = get_positions(current_warehouse, action)
+        # Calculate new positions
+        next_warehouse = move_warehouse(current_warehouse, action)
+        worker_pos, boxes_pos = next_warehouse.worker, next_warehouse.boxes
         
         # Check if action is legal
-        if not is_legal_action(current_warehouse, player_pos, box_pos):
+        if not is_legal_action(current_warehouse, worker_pos, boxes_pos):
             return "Impossible"
             
         # Update warehouse
-        current_warehouse = update_warehouse(current_warehouse, action, player_pos, box_pos)
+        current_warehouse = next_warehouse
     
     return current_warehouse.__str__()
 
