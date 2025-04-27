@@ -528,17 +528,35 @@ class SokobanPuzzle(search.Problem):
 
 # Direction deltas: (dx, dy)
 
-def is_legal_action(warehouse, player_pos, box_pos):
-    """Check if an action is legal using precalculated positions."""
-    # Check if player destination is a wall
-    if player_pos in warehouse.walls:
+def is_legal_action(warehouse_init, new_worker_pos: tuple[int,int], new_boxes_pos: list[tuple[int,int]]):
+    """
+    Check if an action is legal:
+        1. The worker cannot move into a wall.
+        2. A box cannot be pushed into a wall.
+        3. A box cannot be pushed into another box.
+    Does not check for taboo cells.
+    :param warehouse_init: the initial warehouse state to be checked against.
+    :param new_worker_pos: the destination of the worker.
+    :param new_boxes_pos: the destinations of all the boxes.
+    """
+    # Check if the worker's destination is a wall
+    if new_worker_pos in warehouse_init.walls:
         return False
     
-    # Check if player destination has a box
-    if player_pos in warehouse.boxes:
-        # Check if box destination is valid (no walls or other boxes)
-        if box_pos in warehouse.walls or box_pos in warehouse.boxes:
+    # Check if the worker's destination has a box
+    if new_worker_pos in warehouse_init.boxes:
+        # Find the box being pushed
+        new_box_pos = None
+        for box in new_boxes_pos:
+            if box != warehouse_init.boxes:
+                new_box_pos = box
+
+                break
+
+        # Check if the box's destination is valid (no walls or other boxes)
+        if new_box_pos in warehouse_init.walls or new_box_pos in warehouse_init.boxes:
             return False
+
         # Box can be pushed, action is legal
         return True
     else:
