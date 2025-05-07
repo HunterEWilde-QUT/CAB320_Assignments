@@ -2,7 +2,7 @@ import os
 import glob
 import sokoban
 # importing functions individually for sanity_check
-from mySokobanSolver import taboo_cells, solve_weighted_sokoban, check_elem_action_seq 
+import mySokobanSolver as solver
 import re
 import random
 import time
@@ -78,7 +78,7 @@ def classify_warehouse(wh, report_path):
     wall_count = len(wh.walls)
     total_cells = wh.nrows * wh.ncols
     density_score = wall_count / total_cells
-    taboo_count = len(re.findall(r'X', taboo_cells(wh)))
+    taboo_count = len(re.findall(r'X', solver.taboo_cells(wh)))
     weights = wh.weights if wh.weights else "No Weights"
 
     tag_line = f"Boxes: {box_count}, Walls: {wall_count}, Density: {density_score:.2f}, Taboo Count: {taboo_count}, Weights: {weights}"
@@ -101,18 +101,29 @@ def load_warehouse(file_path, report_path):
 # testing load_warehouse and classify_warehouse: both work as expected.
 
 def test_warehouse(file_path, report_path):
-    """ Test a warehouse by loading it and classifying it. """
-    wh = load_warehouse(file_path, report_path)
-    classify_warehouse(wh, report_path)
+    try: 
+        """ Test a warehouse by loading it and classifying it. """
+        wh = load_warehouse(file_path, report_path)
+        classify_warehouse(wh, report_path)
 
-    solution = "Solved"     # Placeholder: expects solved, not solved, or impossible.
-    time = 30               # Placeholder: time taken to solve the warehouse.
-    cost = 20               # Placeholder: cost of the solution.
+        solution = "Solved"     # Placeholder: expects solved, not solved, or impossible.
+        cost = "N/A"               # Placeholder: cost of the solution.
 
-    fake_test()  # Placeholder for the actual test function.
+        # Measure the time taken to solve the warehouse
+        start_time = time.time()
+        result = solver.solve_weighted_sokoban(wh)  # Call the solver function to solve the warehouse.
+        time_taken = time.time() - start_time
+        
 
-    # Reassign the solution, time, and cost variables with actual values.
-    return solution, time, cost
+        if result == ("Impossible", None):
+            solution = "Impossible"
+        else:
+            action, cost = result
+        # Reassign the solution, time, and cost variables with actual values.
+
+        return solution, time_taken, cost
+    except Exception as e:
+        return f"Error: {str(e)}", 0, "N/A"
     
 
 def test_batch(start_warehouse, num_warehouses):
@@ -131,12 +142,12 @@ def test_batch(start_warehouse, num_warehouses):
     for file_path in tqdm(batch_files, desc="Testing warehouses", unit="warehouse"):
         full_file_path = os.path.join("./Assigment1/warehouses", file_path)  # Construct full path
         func = partial(test_warehouse, full_file_path, report_path)
-        result = run_with_timeout(func, 10)  # 10 seconds timeout
+        result = run_with_timeout(func, 60)  # 10 seconds timeout
         if result is None:  # Timeout occurred
             solution, time, cost = "Not Solved", "Timeout", "N/A"
         else:
             solution, time, cost = result
-        edit_report(report_path, f"Result: Solved? = {solution}, Time: {time:.2f} seconds, Cost: {cost}")
+        edit_report(report_path, f"Result: Solved? = {solution}, Time: {time} seconds, Cost: {cost}")
 
     return print(f"Batch test completed. Report saved to {report_path}.")
 
@@ -174,4 +185,4 @@ def run_with_timeout(func, timeout=10):
 # Test Solve_Weighted_Sokoban
 
 if __name__ == '__main__':
-    test_batch("warehouse_001.txt", 20) # Seems to work as expected, should retest after updating mySokobanSolver.py from github.
+    test_batch("warehouse_001_a.txt", 108) # Seems to work as expected, should retest after updating mySokobanSolver.py from github.

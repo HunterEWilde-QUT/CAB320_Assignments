@@ -65,6 +65,8 @@ def read_test_file(file_path, summary_path):
     with open(file_path, 'r') as f:
         lines = f.readlines()
 
+    solved_with_cost_count = 0
+
     for i, line in enumerate(lines):
         if "Loaded" in line:
             # warehouse_name = re.search(r'.\/warehouses\\(.+.txt)', line) -- Don't think I need this
@@ -86,13 +88,27 @@ def read_test_file(file_path, summary_path):
                 warehouse['weights'] = list(map(int, details_match.group(5).split(',')))
 
             result_match = re.search(
-                r'Result:\s*Solved\s*=\s*(\w+), Time:\s*([\d.]+)\s*seconds, Cost:\s*(\d+)',
+                r'Result:\s*Solved\?\s*=\s*(\w+), Time:\s*([\d.]+|Timeout)\s*seconds, Cost:\s*(\d+|None|N\/A)',
                 result_line
             )
+
+            print(result_match)
             if result_match:
                 warehouse['solved'] = result_match.group(1)
-                warehouse['time'] = float(result_match.group(2))
-                warehouse['cost'] = int(result_match.group(3))
+                time_value = result_match.group(2)
+                cost_value = result_match.group(3)
+                
+                # Handle time
+                if time_value == "Timeout":
+                    warehouse['time'] = float('inf')  # Representing timeout as infinity
+                else:
+                    warehouse['time'] = float(time_value)
+                
+                # Handle cost
+                if cost_value == "None" or cost_value == "N/A":
+                    warehouse['cost'] = None
+                else:
+                    warehouse['cost'] = int(cost_value)
 
             warehouses.append(warehouse)
 
@@ -119,7 +135,9 @@ def read_test_file(file_path, summary_path):
         if warehouse['solved'] == 'Solved':
             solved_count += 1
             sum_solve_time += warehouse['time']
-            sum_cost += warehouse['cost']
+            if warehouse['cost'] is not None:
+                sum_cost += warehouse['cost']
+                solved_with_cost_count += 1
             solved_sum_boxes += warehouse['boxes']
             solved_sum_walls += warehouse['walls']
             solved_sum_density += warehouse['density']
@@ -143,7 +161,7 @@ def read_test_file(file_path, summary_path):
     avg_solve_time = f"{sum_solve_time / solved_count:.2f} seconds" if solved_count > 0 else "cannot be calculated"
     edit_report(summary_path, f"Average Solve Time: {avg_solve_time}")
     
-    avg_cost = f"{sum_cost / solved_count:.2f}" if solved_count > 0 else "cannot be calculated"
+    avg_cost = f"{sum_cost / solved_with_cost_count:.2f}" if solved_with_cost_count > 0 else "cannot be calculated"
     edit_report(summary_path, f"Average Solve Cost: {avg_cost}")
     
     avg_solved_boxes = f"{solved_sum_boxes / solved_count:.2f}" if solved_count > 0 else "cannot be calculated"
@@ -171,5 +189,5 @@ def summary_main(test_path):
     summary_path = create_summary()
     read_test_file(test_path, summary_path)
 
-summary_main("testing/Test10.txt")
-        
+summary_main("testing/Test37.txt")
+
